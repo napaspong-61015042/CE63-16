@@ -1,12 +1,24 @@
-#include <WiFi.h>
 #include <esp_now.h>
+#include <WiFi.h>
 
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  if (status == ESP_NOW_SEND_SUCCESS) {
-    Serial.println("OK");
-  } else {
-    Serial.println("Fail");
+void onReceiveData(const uint8_t *mac, const uint8_t *Indata, int len) {
+
+  Serial.print("Received from MAC: ");
+
+  for (int i = 0; i < 6; i++) {
+
+    Serial.printf("%02X", mac[i]);
+    if (i < 5)Serial.print(":");
   }
+
+  Serial.println();
+  String dataIn;
+  for (int i = 0; i < len; i++) {
+    dataIn += (char)Indata[i];
+  }
+  Serial.print("Datain: ");
+  Serial.println(dataIn);
+
 }
 
 void setup() {
@@ -14,24 +26,12 @@ void setup() {
 
   WiFi.mode(WIFI_STA);
 
-  esp_now_init();
-  esp_now_register_send_cb(OnDataSent);
-
-  static esp_now_peer_info_t peerInfo;
-  memcpy(peerInfo.peer_addr, new uint8_t[6] { 0x24, 0x0A, 0xC4, 0xAA, 0x10, 0xD4 }, 6);
-  peerInfo.channel = 0;
-  peerInfo.encrypt = false;
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.println("Failed to add peer");
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
   }
+
+  esp_now_register_recv_cb(onReceiveData);
 }
 
-void loop() {
-  String data = "Hello";
-  Serial.print("Sending... ");
-  esp_err_t result = esp_now_send(new uint8_t[6] { 0x24, 0x0A, 0xC4, 0xAA, 0x10, 0xD4 }, (uint8_t*)data.c_str(), data.length());
-  if (result != ESP_OK) {
-    Serial.println("Send error");
-  }
-  delay(1000);
-}
+void loop() {}
