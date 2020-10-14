@@ -19,37 +19,13 @@ class _HomeState extends State<Home> {
   // Method
 
 
-  Widget showMenu1() {
-    return Container(
-      width: 160.0,
-      height: 160.0,
-      child: Image.asset('images/on-off.png'),
-    );
-  }
-
-  Widget showMenu2() {
-    return Container(
-      width: 160.0,
-      height: 160.0,
-      child: Image.asset('images/alert.png'),
-    );
-  }
-
-  Widget showMenu3() {
-    return Container(
-      width: 160.0,
-      height: 160.0,
-      child: Image.asset('images/check_status.png'),
-    );
-  }
-
-  Widget showMenu4() {
-    return Container(
-      width: 160.0,
-      height: 160.0,
-      child: Image.asset('images/setting.png'),
-    );
-  }
+//  Widget showMenu1() {
+//    return Container(
+//      width: 160.0,
+//      height: 160.0,
+//      child: Image.asset('images/on-off.png'),
+//    );
+//  }
 
   @override
   Widget build(BuildContext context) {
