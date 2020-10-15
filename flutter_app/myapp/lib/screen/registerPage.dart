@@ -14,8 +14,13 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   @override
-  final formKey = GlobalKey<FormState>();
+  final formKey = GlobalKey<FormState>(); //รับค่า email และ password
   String nameString, emailString, passwordString, passwordConfirmString;
+  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+  TextEditingController nameController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  TextEditingController confirmController = TextEditingController();
 
   Widget nameText() {
     return TextFormField(
@@ -49,15 +54,13 @@ class _RegisterPageState extends State<RegisterPage> {
           return null;
         }
       },
-      onSaved: (String value) {
-        nameString =
-            value.trim(); //trim = ตัดช่องว่างข้างหน้าและข้างหลังอัตโนมัติ
-      },
+      controller: nameController,
     );
   }
 
   Widget emailText() {
     return TextFormField(
+      keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
         icon: Icon(
           Icons.email,
@@ -88,15 +91,13 @@ class _RegisterPageState extends State<RegisterPage> {
           return null;
         }
       },
-      onSaved: (String value) {
-        emailString =
-            value.trim(); //trim = ตัดช่องว่างข้างหน้าและข้างหลังอัตโนมัติ
-      },
+      controller: emailController,
     );
   }
 
   Widget passwordText() {
     return TextFormField(
+      obscureText: true,
       decoration: InputDecoration(
         icon: Icon(
           Icons.lock,
@@ -123,15 +124,13 @@ class _RegisterPageState extends State<RegisterPage> {
           return null;
         }
       },
-      onSaved: (String value) {
-        passwordString =
-            value.trim(); //trim = ตัดช่องว่างข้างหน้าและข้างหลังอัตโนมัติ
-      },
+      controller: passwordController,
     );
   }
 
   Widget passwordConfirmText() {
     return TextFormField(
+      obscureText: true,
       decoration: InputDecoration(
         icon: Icon(
           Icons.autorenew,
@@ -158,10 +157,7 @@ class _RegisterPageState extends State<RegisterPage> {
           return null;
         }
       },
-      onSaved: (String value) {
-        passwordConfirmString =
-            value.trim(); //trim = ตัดช่องว่างข้างหน้าและข้างหลังอัตโนมัติ
-      },
+      controller: confirmController,
     );
   }
 
@@ -170,6 +166,7 @@ class _RegisterPageState extends State<RegisterPage> {
       child: Padding(
         padding: EdgeInsets.all(30.0),
         child: MaterialButton(
+          height: 50.0,
           onPressed: () {
             print('You click upload');
             if (formKey.currentState.validate()) {
@@ -177,9 +174,11 @@ class _RegisterPageState extends State<RegisterPage> {
               print(
                   'name = $nameString, email = $emailString, pass = $passwordString');
               registerThread(); //เป็นการคอฟังก์ชั่น เมื่อไหรที่ได้รับname email pass จะมาทำงานที่ registerThread ต่อทันที
+
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()));
             }
-//          Navigator.push(context,
-//              MaterialPageRoute(builder: (context) => loginPage()));
           },
           color: Colors.white,
           shape: RoundedRectangleBorder(
@@ -187,20 +186,21 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           child:
 //          isloading ? CupertinoActivityIndicator() :
-              Text('Register'),
+              Text('Register',style: TextStyle(fontSize: 18.0),),
         ),
       ),
     );
   }
 
   Future<void> registerThread() async {
-    FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-    if (passwordString == passwordConfirmString && passwordString.length >= 6) {
+    String email = emailController.text.trim();
+    String password = passwordController.text.trim();
+    String confirmPassword = confirmController.text.trim();
+    if (password == confirmPassword && password.length >= 6) {
       await firebaseAuth
-          .createUserWithEmailAndPassword(
-              email: emailString, password: passwordString)
+          .createUserWithEmailAndPassword(email: email, password: password)
           .then((response) {
-        print('Register Success for Email = $emailString');
+        print('Register Success for Email = $email');
       }).catchError((response) {
         String title = response.code;
         String message = response.message;
@@ -244,21 +244,21 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget loginButton() {
-    return Container(
-      child: Padding(
-        padding: EdgeInsets.only(top: 10.0),
-        child: FlatButton(
-          onPressed: () {
-//          Navigator.push(context,
-//              MaterialPageRoute(builder: (context) => SecondPage()));
-          },
-          child: Text('Already a User? Login'),
-          textColor: Colors.white,
-        ),
-      ),
-    );
-  }
+//  Widget loginButton() {
+//    return Container(
+//      child: Padding(
+//        padding: EdgeInsets.only(top: 10.0),
+//        child: FlatButton(
+//          onPressed: () {
+//            MaterialPageRoute materialPageRoute = MaterialPageRoute(
+//                builder: (BuildContext context) => LoginPage());
+//          },
+//          child: Text('Already a User? Login',style: TextStyle(fontSize: 18.0),),
+//          textColor: Colors.red,
+//        ),
+//      ),
+//    );
+//  }
 
   Widget build(BuildContext context) {
     return new Scaffold(
@@ -281,7 +281,6 @@ class _RegisterPageState extends State<RegisterPage> {
             passwordText(),
             passwordConfirmText(),
             registerButton(),
-            loginButton(),
           ],
         ),
       ),

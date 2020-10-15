@@ -11,40 +11,78 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final FirebaseAuth _auth = FirebaseAuth
+  //ประกาศตัวแปร
+  final FirebaseAuth firebaseAuth = FirebaseAuth
       .instance; //class ที่ชื่อว่า FirebaseAuth ซึ่งเราต้องสร้าง instance ก่อนใช้งาน
   String emailString, passwordString;
-  final formKey = GlobalKey<FormState>();
+  final formKey = GlobalKey<FormState>(); //รับค่า email และ password
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
+//method
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: Text("Sign In", style: TextStyle(color: Colors.white)),
-          backgroundColor: Colors.green[200],
-        ),
-        body: Container(
-            color: Colors.green[50],
-            child: Center(
-              child: Container(
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      gradient: LinearGradient(
-                          colors: [Colors.yellow[100], Colors.green[100]])),
-                  margin: EdgeInsets.all(32),
-                  padding: EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      buildTextFieldEmail(),
-                      buildTextFieldPassword(),
-                      buildButtonSignIn(),
-                    ],
-                  )),
-            )));
+  void initState(){   //ทำงานอันดับแรก check สถานะ login
+    super.initState();
+    checkStatus();
+  }
+
+  Future<void> checkStatus()async{
+    FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+    User user = await firebaseAuth.currentUser;
+    if (user != null){
+      MaterialPageRoute materialPageRoute = MaterialPageRoute(builder: (BuildContext context) => Home());
+      Navigator.of(context).pushAndRemoveUntil(materialPageRoute, (Route<dynamic> route) => false);
+    }
+  }
+
+  Future<User> checkAuthen() async {
+    FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+    await firebaseAuth
+        .signInWithEmailAndPassword(
+            email: emailString, password: passwordString)
+        .then((response) {
+      print('Authen Success');
+      MaterialPageRoute materialPageRoute =
+          MaterialPageRoute(builder: (BuildContext context) => Home());
+      Navigator.of(context).pushAndRemoveUntil(
+          materialPageRoute, (Route<dynamic> route) => false);
+    }).catchError((response) {
+      String title = response.code; //หัวข้อของ error
+      String message = response.message;
+      myAlert(title, message);
+    });
+  }
+
+  void myAlert(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: ListTile(
+            leading: Icon(
+              Icons.add_alert,
+              color: Colors.red,
+              size: 36.0,
+            ),
+            title: Text(
+              title,
+              style: TextStyle(
+                color: Colors.red,
+              ),
+            ),
+          ),
+          content: Text(message),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            )
+          ],
+        );
+      },
+    );
   }
 
   Container buildButtonSignIn() {
@@ -52,21 +90,27 @@ class _LoginPageState extends State<LoginPage> {
       child: InkWell(
         child: Container(
           constraints: BoxConstraints.expand(height: 50),
-          child: Text(
-            "Sign in",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18, color: Colors.white),
+          child: FlatButton(
+            child: Text(
+              "Sign in",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, color: Colors.white),
+            ),
+            onPressed: () {
+              formKey.currentState.save();
+              print('email = $emailString, password = $passwordString');
+              checkAuthen(); //เมื่อรับค่า String จะมา check Authen
+            },
           ),
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              color: Colors.green[200]
-          ),
+              color: Colors.green[300]),
           margin: EdgeInsets.only(top: 16),
           padding: EdgeInsets.all(12),
         ),
-        onTap: () {
-          Home();
-        },
+//        onTap: () {
+//          signIn();
+//        },
       ),
     );
   }
@@ -77,6 +121,7 @@ class _LoginPageState extends State<LoginPage> {
       decoration: BoxDecoration(
           color: Colors.yellow[50], borderRadius: BorderRadius.circular(16)),
       child: TextFormField(
+        keyboardType: TextInputType.emailAddress,
         decoration: InputDecoration.collapsed(hintText: "Email"),
         style: TextStyle(fontSize: 18),
         controller: emailController,
@@ -97,6 +142,7 @@ class _LoginPageState extends State<LoginPage> {
         obscureText: true,
         decoration: InputDecoration.collapsed(hintText: "Password"),
         style: TextStyle(fontSize: 18),
+        controller: passwordController,
         onSaved: (String value) {
           passwordString = value.trim();
         },
@@ -104,17 +150,83 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> signIn() async {
-    FirebaseAuth _auth = FirebaseAuth.instance;
-    await _auth
-        .signInWithEmailAndPassword(
-      email: passwordString,
-      password: passwordString,
-    )
-        .then((response) {
-      print("signed in $emailString");
-    }).catchError((error) {
-      print(error);
-    });
+  Container buildOtherLine() {
+    return Container(
+        margin: EdgeInsets.only(top: 16),
+        child: Row(children: <Widget>[
+          Expanded(child: Divider(color: Colors.green[800])),
+          Padding(
+              padding: EdgeInsets.all(6),
+              child: Text("Don’t have an account?",
+                  style: TextStyle(color: Colors.black87))),
+          Expanded(child: Divider(color: Colors.green[800])),
+        ]));
+  }
+
+  Container buildButtonRegister() {
+    return Container(
+      child: InkWell(
+        child: Container(
+          constraints: BoxConstraints.expand(height: 50),
+          child: FlatButton(
+            child: Text(
+              "Sign in",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, color: Colors.white),
+            ),
+//            onPressed: () {
+//              formKey.currentState.save();
+//              print('email = $emailString, password = $passwordString');
+//              checkAuthen(); //เมื่อรับค่า String จะมา check Authen
+//            },
+          ),
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.orange[300]),
+          margin: EdgeInsets.only(top: 16),
+          padding: EdgeInsets.all(12),
+        ),
+        onTap: () {
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => RegisterPage()));
+        },
+      ),
+    );
+  }
+
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Sign In", style: TextStyle(color: Colors.white)),
+        backgroundColor: ColorPalette.grey60,
+      ),
+      body: Form(
+        key: formKey,
+        child: Container(
+          color: ColorPalette.grey60,
+          child: Center(
+            child: Container(
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                      colors: [Colors.black26, Colors.black26])),
+              margin: EdgeInsets.all(32),
+              padding: EdgeInsets.all(22),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  buildTextFieldEmail(),
+                  buildTextFieldPassword(),
+                  buildButtonSignIn(),
+                  buildOtherLine(),
+                  buildButtonRegister()
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/screen/SecondPage.dart';
 import 'color_palette.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'icon_data.dart';
 
 class Home extends StatefulWidget {
+//  final User user;
+//
+//  Home(this.user, {Key key}) : super(key: key);
+
   @override
+
   _HomeState createState() => _HomeState();
 }
 
@@ -17,7 +23,9 @@ class Choice {
 
 class _HomeState extends State<Home> {
   // Method
-
+  initState() {
+    super.initState();
+  }
 
 //  Widget showMenu1() {
 //    return Container(
