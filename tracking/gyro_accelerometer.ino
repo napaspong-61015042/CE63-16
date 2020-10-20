@@ -98,3 +98,14 @@ void loop() {
     previousMillis = currentMillis;
     Time = currentMillis;
   }
+  if (runState == 1) {
+    M5.Lcd.setTextColor(WHITE , BLACK);
+    M5.Lcd.setCursor(20, 220);
+    M5.Lcd.print(Time);
+    if ((currentMillis - previousMillis) >= 10000 && (currentMillis - previousMillis) <= 10000 + 1000) {
+      dataLog[0][0] = ImuAX;
+      dataLog[1][0] = ImuAY;
+      dataLog[2][0] = ImuAZ;
+      dataLog[3][0] = ImuGX;
+      dataLog[4][0] = ImuGY;
+      dataLog[5][0] = ImuGZ;
