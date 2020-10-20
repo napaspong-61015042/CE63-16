@@ -1,11 +1,19 @@
 #include <M5Stack.h>
 #include "utility/MPU9250.h"
-
+#include <SPI.h>
+#include <SD.h>
+String dataLog[6][10];
+unsigned long previousMillis = 0;
+unsigned long Time = 0;
+int runState = 0;
+int saveState = 0;
+int ImuAX,ImuAY,ImuAZ,ImuGX,ImuGY,ImuGZ;
 MPU9250 IMU;
 unsigned long count = 0;
+File myFile;
 
 void setup() {
-
+  Serial.begin(115200);
   M5.begin();
   Wire.begin();
   M5.Lcd.fillScreen(BLACK);
@@ -13,15 +21,20 @@ void setup() {
   M5.Lcd.setTextSize(2);
   IMU.initMPU9250();
   IMU.calibrateMPU9250(IMU.gyroBias, IMU.accelBias);
+  Serial.print("Initializing SD card...");
+
+  if (!SD.begin(4)) {
+    Serial.println("initialization failed!");
+    while (1);
+  }
+  Serial.println("initialization done.");
+
 }
 
 void loop() {
+  unsigned long currentMillis = millis();
   M5.update();
-
   count++;
-
-  // If intPin goes high, all data registers have new data
-  // On interrupt, check if data ready interrupt
   if (IMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01) {
     IMU.readAccelData(IMU.accelCount);
     IMU.getAres();
@@ -52,6 +65,12 @@ void loop() {
       int x = 64 + 10;
       int y = 128 + 20;
       int z = 192 + 30;
+      ImuAX = (float)(1000 * IMU.ax);
+      ImuAY = (float)(1000 * IMU.ay);
+      ImuAZ = (float)(1000 * IMU.az);
+      ImuGX = (float)(IMU.gx);
+      ImuGY = (float)(IMU.gy);
+      ImuGZ = (float)(IMU.gz);
 
       M5.Lcd.fillScreen(BLACK);
       M5.Lcd.setTextColor(GREEN , BLACK);
@@ -62,18 +81,20 @@ void loop() {
       M5.Lcd.setCursor(y, 32); M5.Lcd.print("z");
 
       M5.Lcd.setTextColor(YELLOW , BLACK);
-      M5.Lcd.setCursor(0, 48 * 2); M5.Lcd.print((int)(1000 * IMU.ax));
-      M5.Lcd.setCursor(x, 48 * 2); M5.Lcd.print((int)(1000 * IMU.ay));
-      M5.Lcd.setCursor(y, 48 * 2); M5.Lcd.print((int)(1000 * IMU.az));
+      M5.Lcd.setCursor(0, 48 * 2); M5.Lcd.print(ImuAX);
+      M5.Lcd.setCursor(x, 48 * 2); M5.Lcd.print(ImuAY);
+      M5.Lcd.setCursor(y, 48 * 2); M5.Lcd.print(ImuAZ);
       M5.Lcd.setCursor(z, 48 * 2); M5.Lcd.print("mg");
 
-      M5.Lcd.setCursor(0, 64 * 2); M5.Lcd.print((int)(IMU.gx));
-      M5.Lcd.setCursor(x, 64 * 2); M5.Lcd.print((int)(IMU.gy));
-      M5.Lcd.setCursor(y, 64 * 2); M5.Lcd.print((int)(IMU.gz));
+      M5.Lcd.setCursor(0, 64 * 2); M5.Lcd.print(ImuGX);
+      M5.Lcd.setCursor(x, 64 * 2); M5.Lcd.print(ImuGY);
+      M5.Lcd.setCursor(y, 64 * 2); M5.Lcd.print(ImuGZ);
       M5.Lcd.setCursor(z, 64 * 2); M5.Lcd.print("deg/s");
-
     }
-    delay (500);
   }
 
-}
+  if (M5.BtnA.wasReleased() && runState == 0) {
+    runState = 1;
+    previousMillis = currentMillis;
+    Time = currentMillis;
+  }
