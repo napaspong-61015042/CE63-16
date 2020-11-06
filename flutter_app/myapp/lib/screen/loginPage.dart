@@ -21,17 +21,20 @@ class _LoginPageState extends State<LoginPage> {
 
 //method
   @override
-  void initState(){   //ทำงานอันดับแรก check สถานะ login
+  void initState() {
+    //ทำงานอันดับแรก check สถานะ login
     super.initState();
     checkStatus();
   }
 
-  Future<void> checkStatus()async{
+  Future<void> checkStatus() async {
     FirebaseAuth firebaseAuth = FirebaseAuth.instance;
     User user = await firebaseAuth.currentUser;
-    if (user != null){
-      MaterialPageRoute materialPageRoute = MaterialPageRoute(builder: (BuildContext context) => Home());
-      Navigator.of(context).pushAndRemoveUntil(materialPageRoute, (Route<dynamic> route) => false);
+    if (user != null) {
+      MaterialPageRoute materialPageRoute =
+          MaterialPageRoute(builder: (BuildContext context) => Home());
+      Navigator.of(context).pushAndRemoveUntil(
+          materialPageRoute, (Route<dynamic> route) => false);
     }
   }
 
@@ -92,7 +95,7 @@ class _LoginPageState extends State<LoginPage> {
           constraints: BoxConstraints.expand(height: 50),
           child: FlatButton(
             child: Text(
-              "Sign in",
+              "Log in",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18, color: Colors.white),
             ),
@@ -108,9 +111,6 @@ class _LoginPageState extends State<LoginPage> {
           margin: EdgeInsets.only(top: 16),
           padding: EdgeInsets.all(12),
         ),
-//        onTap: () {
-//          signIn();
-//        },
       ),
     );
   }
@@ -119,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color: Colors.yellow[50], borderRadius: BorderRadius.circular(16)),
+          color: Colors.yellow[50], borderRadius: BorderRadius.circular(16),),
       child: TextFormField(
         keyboardType: TextInputType.emailAddress,
         decoration: InputDecoration.collapsed(hintText: "Email"),
@@ -154,12 +154,12 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
         margin: EdgeInsets.only(top: 16),
         child: Row(children: <Widget>[
-          Expanded(child: Divider(color: Colors.green[800])),
+          Expanded(child: Divider(color: Colors.white)), //เส้นคั่น
           Padding(
               padding: EdgeInsets.all(6),
               child: Text("Don’t have an account?",
-                  style: TextStyle(color: Colors.black87))),
-          Expanded(child: Divider(color: Colors.green[800])),
+                  style: TextStyle(color: Colors.white))),
+          Expanded(child: Divider(color: Colors.white)), //เส้นคั่น
         ]));
   }
 
@@ -170,7 +170,7 @@ class _LoginPageState extends State<LoginPage> {
           constraints: BoxConstraints.expand(height: 50),
           child: FlatButton(
             child: Text(
-              "Sign in",
+              "Sign up",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18, color: Colors.white),
             ),
@@ -194,28 +194,49 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Widget showLogo() {
+    return Container(
+      width: 220.0,
+      height: 220.0,
+      child: Image.asset('images/2-logo-2.png'),
+    );
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Sign In", style: TextStyle(color: Colors.white)),
-        backgroundColor: ColorPalette.grey60,
-      ),
+//      appBar: AppBar(
+//        backgroundColor: Colors.transparent,
+//        elevation: 0.0,
+//        title: Text('Sign In'),
+//      ),
       body: Form(
         key: formKey,
         child: Container(
-          color: ColorPalette.grey60,
+          padding: EdgeInsets.only(top: 20.0),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment(
+                  0.8, 0.0), // 10% of the width, so there are ten blinds.
+              colors: [
+                const Color(0xFF34e89e),
+                const Color(0xFF0f3443),
+              ], // green to grey
+//              tileMode: TileMode.repeated, // repeats the gradient over the canvas
+            ),
+          ),
           child: Center(
             child: Container(
               decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  gradient: LinearGradient(
-                      colors: [Colors.black26, Colors.black26])),
+                borderRadius: BorderRadius.circular(16),
+                gradient:
+                    LinearGradient(colors: [Colors.white12, Colors.white12]),
+              ),
               margin: EdgeInsets.all(32),
               padding: EdgeInsets.all(22),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: ListView(
                 children: <Widget>[
+                  showLogo(),
                   buildTextFieldEmail(),
                   buildTextFieldPassword(),
                   buildButtonSignIn(),

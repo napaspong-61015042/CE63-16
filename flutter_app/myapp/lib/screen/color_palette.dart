@@ -5,4 +5,7 @@ class ColorPalette {
   static Color grey30 = Color(0xFFc8dad3);
   static Color grey60 = Color(0xFF93b5b3);
   static Color grey90 = Color(0xFF63707e);
+  static Color green = Color(0xFF73C8A9);
+  static Color black = Color(0xFF373B44);
+
 }

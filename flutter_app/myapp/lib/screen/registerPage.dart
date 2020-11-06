@@ -42,10 +42,10 @@ class _RegisterPageState extends State<RegisterPage> {
           fontSize: 14.0,
           fontStyle: FontStyle.italic,
         ),
-        hintText: 'Harry Potter',
-        hintStyle: TextStyle(
-          color: Colors.white,
-        ),
+//        hintText: 'Harry Potter',
+//        hintStyle: TextStyle(
+//          color: Colors.white,
+//        ),
       ),
       validator: (String value) {
         if (value.isEmpty) {
@@ -73,16 +73,16 @@ class _RegisterPageState extends State<RegisterPage> {
           fontWeight: FontWeight.bold,
           fontSize: 20.0,
         ),
-        helperText: 'Type your Email',
+        helperText: 'Ex. 60000000@kmitl.ac.th',
         helperStyle: TextStyle(
           color: Colors.white,
           fontSize: 14.0,
           fontStyle: FontStyle.italic,
         ),
-        hintText: '60000000@kmitl.ac.th',
-        hintStyle: TextStyle(
-          color: Colors.white,
-        ),
+//        hintText: '60000000@kmitl.ac.th',
+//        hintStyle: TextStyle(
+//          color: Colors.white,
+//        ),
       ),
       validator: (String value) {
         if (!((value.contains('@')) && (value.contains('.')))) {
@@ -175,9 +175,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   'name = $nameString, email = $emailString, pass = $passwordString');
               registerThread(); //เป็นการคอฟังก์ชั่น เมื่อไหรที่ได้รับname email pass จะมาทำงานที่ registerThread ต่อทันที
 
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginPage()));
+//              Navigator.push(context,
+//                  MaterialPageRoute(builder: (context) => LoginPage()));
             }
           },
           color: Colors.white,
@@ -186,7 +185,26 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           child:
 //          isloading ? CupertinoActivityIndicator() :
-              Text('Register',style: TextStyle(fontSize: 18.0),),
+              Text(
+            'Register',
+            style: TextStyle(fontSize: 18.0),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget loginButton() {
+    return Container(
+      child: Padding(
+        padding: EdgeInsets.only(top: 10.0),
+        child: FlatButton(
+          onPressed: () {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => LoginPage()));
+          },
+          child: Text('Already a User? Login',style: TextStyle(fontSize: 16.0),),
+          textColor: Colors.orange,
         ),
       ),
     );
@@ -201,6 +219,8 @@ class _RegisterPageState extends State<RegisterPage> {
           .createUserWithEmailAndPassword(email: email, password: password)
           .then((response) {
         print('Register Success for Email = $email');
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => LoginPage()));
       }).catchError((response) {
         String title = response.code;
         String message = response.message;
@@ -208,8 +228,44 @@ class _RegisterPageState extends State<RegisterPage> {
         myAlert(title, message); //คอร์ method
       });
     } else {
+      String title2 = "";
+      String message2 = "Password and Confirm-password is not match.";
       print("Password and Confirm-password is not match.");
+      passwordNotMatch(title2, message2);
     }
+  }
+
+
+  void passwordNotMatch(String title2, String message2) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: ListTile(
+            leading: Icon(
+              Icons.add_alert,
+              color: Colors.red,
+              size: 36.0,
+            ),
+            title: Text(
+              title2,
+              style: TextStyle(
+                color: Colors.red,
+              ),
+            ),
+          ),
+          content: Text(message2),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            )
+          ],
+        );
+      },
+    );
   }
 
   void myAlert(String title, String message) {
@@ -244,44 +300,55 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-//  Widget loginButton() {
-//    return Container(
-//      child: Padding(
-//        padding: EdgeInsets.only(top: 10.0),
-//        child: FlatButton(
-//          onPressed: () {
-//            MaterialPageRoute materialPageRoute = MaterialPageRoute(
-//                builder: (BuildContext context) => LoginPage());
-//          },
-//          child: Text('Already a User? Login',style: TextStyle(fontSize: 18.0),),
-//          textColor: Colors.red,
-//        ),
-//      ),
-//    );
-//  }
+
+  Widget textRegister() {
+    return Container(
+      padding: EdgeInsets.only(left: 0.0, top: 20.0, bottom: 20.0),
+      child: Text(
+        'Create Account',
+        style: TextStyle(fontSize: 30.0, color: Colors.white),
+      ),
+    );
+  }
 
   Widget build(BuildContext context) {
     return new Scaffold(
-      backgroundColor: ColorPalette.grey60,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0.0,
-        title: Text(
-          'Register',
-          textAlign: TextAlign.center,
-        ),
-      ),
+//      backgroundColor: ColorPalette.grey60,
+//      appBar: AppBar(
+//        backgroundColor: Colors.transparent,
+//        elevation: 0.0,
+//        title: Text(
+//          'Register',
+//          textAlign: TextAlign.center,
+//        ),
+//      ),
       body: Form(
         key: formKey,
-        child: ListView(
-          padding: EdgeInsets.all(30.0),
-          children: <Widget>[
-            nameText(),
-            emailText(),
-            passwordText(),
-            passwordConfirmText(),
-            registerButton(),
-          ],
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment(
+                  0.8, 0.0), // 10% of the width, so there are ten blinds.
+              colors: [
+                const Color(0xFF34e89e),
+                const Color(0xFF0f3443),
+              ], // green to grey
+//              tileMode: TileMode.repeated, // repeats the gradient over the canvas
+            ),
+          ),
+          child: ListView(
+            padding: EdgeInsets.all(30.0),
+            children: <Widget>[
+              textRegister(),
+              nameText(),
+              emailText(),
+              passwordText(),
+              passwordConfirmText(),
+              registerButton(),
+              loginButton(),
+            ],
+          ),
         ),
       ),
     );
