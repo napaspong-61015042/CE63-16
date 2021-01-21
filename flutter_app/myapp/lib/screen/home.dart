@@ -2,11 +2,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:myapp/screen/SecondPage.dart';
+import 'package:myapp/screen/historyPage.dart';
 import 'package:myapp/screen/loginPage.dart';
 import 'CustomClipper.dart';
 import 'color_palette.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'icon_data.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -22,8 +24,15 @@ class Choice {
 
 class _HomeState extends State<Home> {
   //Explicit (ตัวแปร)
-
+  Color _buttonColor1 = ColorPalette.grey10;
+  final databaseReference = FirebaseDatabase.instance.reference();
   // Method
+
+  void readData(){
+    databaseReference.once().then((DataSnapshot snapshot) {
+      print('Data : ${snapshot.value}');
+    });
+  }
 
   Widget signoutButton() {
     return IconButton(
@@ -34,6 +43,8 @@ class _HomeState extends State<Home> {
       },
     );
   }
+
+  //button log out
 
   void myAlert() {
     showDialog(
@@ -82,23 +93,29 @@ class _HomeState extends State<Home> {
     });
   }
 
+  //end button log out
+
   Widget OnOff() {
     return Container(
       child: Card(
-        margin: EdgeInsets.only(top: 20.0, right: 130.0, left: 130.0),
-        color: ColorPalette.grey10,
+        margin: EdgeInsets.only(top: 20.0, right: 127.0, left: 105.0),
+        color: _buttonColor1,
         elevation: 0.0,
         shape: CircleBorder(),
         child: FlatButton(
           height: 120.0,
           minWidth: 100.0,
           onPressed: () {
-            Navigator.push(
-                context, MaterialPageRoute(builder: (context) => SecondPage()));
+            setState(() {
+              _buttonColor1 = Colors.green.shade800;
+            });
+//            Navigator.push(
+//                context, MaterialPageRoute(builder: (context) => SecondPage()));
           },
           child: Icon(
+
             Icons.power_settings_new,
-            color: ColorPalette.grey60,
+            color: ColorPalette.black,
             size: 45.0,
           ),
         ),
@@ -108,31 +125,34 @@ class _HomeState extends State<Home> {
 
   Widget Alert() {
     return Container(
+      padding: EdgeInsets.only(top: 80.0, right: 25.0, left: 25.0),
+      alignment: Alignment.center,
       child: Card(
-        margin: EdgeInsets.only(top: 20.0, left: 200.0),
+//        margin: EdgeInsets.only(top: 20.0, left: 200.0),
         color: ColorPalette.grey10,
-        elevation: 10.0,
+        elevation: 2.0,
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(25.0)),
         child: FlatButton(
-          height: 50.0,
+          height: 90.0,
           minWidth: 50.0,
           onPressed: () {
             Navigator.push(
-                context, MaterialPageRoute(builder: (context) => SecondPage()));
+                context, MaterialPageRoute(builder: (context) => historyPage()));
           },
           child: ListTile(
             //จัดวางองค์ประกอบใน card
             leading: Icon(
               //การแสดง icon ใน card
-              Icons.add_alert,
-              size: 35.0,
+              Icons.history,
+              size: 45.0,
               color: ColorPalette.grey60,
             ),
             title: Text(
               //การแสดงข้อความใน card
-              'Alert',
-              style: TextStyle(color: Colors.black87, fontSize: 18.0),
+              'History Alert',
+//              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black87, fontSize: 20.0),
             ),
           ),
         ),
@@ -142,19 +162,21 @@ class _HomeState extends State<Home> {
 
   Widget checkStatus() {
     return Container(
+      alignment: Alignment.center,
       padding: const EdgeInsets.only(
-          top: 10.0, right: 15.0, left: 15.0, bottom: 10.0),
+          top: 20.0, right: 25.0, left: 25.0, bottom: 10.0),
       child: Card(
         color: ColorPalette.grey10,
         elevation: 0.0,
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(25.0)),
         child: FlatButton(
-          height: 100.0,
-          minWidth: 350.0,
+          height: 90.0,
+          minWidth: 50.0,
           onPressed: () {
-            Navigator.push(
-                context, MaterialPageRoute(builder: (context) => SecondPage()));
+            readData();
+            // Navigator.push(
+            //     context, MaterialPageRoute(builder: (context) => SecondPage()));
           },
           child: ListTile(
             //จัดวางองค์ประกอบใน card
@@ -182,7 +204,7 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0.0,
-        title: Text('tracking and alarm system'),
+        title: Text('Tracking And Alarm System'),
         actions: <Widget>[
           signoutButton(),
         ],
@@ -192,18 +214,23 @@ class _HomeState extends State<Home> {
         child: Container(
           child: Stack(
             children: <Widget>[
-              Container(color: ColorPalette.grey30),
+              // The containers in the background
+              new Container(color: ColorPalette.grey90),
               ClipPath(
                 clipper: BottomWaveClipper(),
                 child: Container(
                   color: ColorPalette.green,
-                  child: Padding(
-                    padding: const EdgeInsets.all(25.0),
-                    child: Column(
-                      children: <Widget>[
-                        OnOff(),
-                      ],
-                    ),
+                ),
+              ),
+              new Container(
+                child: Padding(
+                  padding: const EdgeInsets.all(25.0),
+                  child: Column(
+                    children: <Widget>[
+                      OnOff(),
+                      Alert(),
+                      checkStatus(),
+                    ],
                   ),
                 ),
               ),

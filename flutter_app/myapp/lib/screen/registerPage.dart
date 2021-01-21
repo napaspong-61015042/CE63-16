@@ -24,6 +24,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget nameText() {
     return TextFormField(
+      style: TextStyle(color: Colors.white),
       decoration: InputDecoration(
         icon: Icon(
           Icons.face,
@@ -60,6 +61,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget emailText() {
     return TextFormField(
+      style: TextStyle(color: Colors.white),
       keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
         icon: Icon(
@@ -97,6 +99,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget passwordText() {
     return TextFormField(
+      style: TextStyle(color: Colors.white),
       obscureText: true,
       decoration: InputDecoration(
         icon: Icon(
@@ -130,6 +133,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget passwordConfirmText() {
     return TextFormField(
+      style: TextStyle(color: Colors.white),
       obscureText: true,
       decoration: InputDecoration(
         icon: Icon(
