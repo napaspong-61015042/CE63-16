@@ -1,0 +1,8 @@
+https://motorcycle-theft.firebaseio.com/
+
+6Ww8PReofVxLpFuUgHLkXP4piIhqrlsaMYlfnVIk
+
+#define FIREBASE_HOST "https://motorcycle-theft.firebaseio.com/"
+#define FIREBASE_AUTH "6Ww8PReofVxLpFuUgHLkXP4piIhqrlsaMYlfnVIk"
+#define WIFI_SSID "raspiwifi"
+#define WIFI_PASSWORD "ohm12515"
