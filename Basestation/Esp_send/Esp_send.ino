@@ -53,7 +53,7 @@ void loop() {
 
 }*/
 
-/********* Firebase **********/
+/********* Firebase V.1 **********/
 #include <esp_now.h>
 #include <WiFi.h>
 
