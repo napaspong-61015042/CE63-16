@@ -1,3 +1,4 @@
+/* Test - sample*/
 /**
  * A BLE client example that is rich in capabilities.
  * There is a lot new capabilities implemented.
