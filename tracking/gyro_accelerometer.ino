@@ -61,42 +61,53 @@ void loop() {
              IMU.magbias[2];
 
 
-    if (count % 10) {
-      int x = 64 + 10;
-      int y = 128 + 20;
-      int z = 192 + 30;
-      ImuAX = (float)(1000 * IMU.ax);
-      ImuAY = (float)(1000 * IMU.ay);
-      ImuAZ = (float)(1000 * IMU.az);
-      ImuGX = (float)(IMU.gx);
-      ImuGY = (float)(IMU.gy);
-      ImuGZ = (float)(IMU.gz);
+   
+      if (count % 10) {
 
-      M5.Lcd.fillScreen(BLACK);
-      M5.Lcd.setTextColor(GREEN , BLACK);
-      M5.Lcd.setTextSize(2);
-      M5.Lcd.setCursor(5, 0); M5.Lcd.print("ACCELEROMETER AND GYRO");
-      M5.Lcd.setCursor(0, 32); M5.Lcd.print("x");
-      M5.Lcd.setCursor(x, 32); M5.Lcd.print("y");
-      M5.Lcd.setCursor(y, 32); M5.Lcd.print("z");
+        ImuAX = (float)(1000 * IMU.ax);
+        ImuAY = (float)(1000 * IMU.ay);
+        ImuAZ = (float)(1000 * IMU.az);
+        ImuGX = (float)(IMU.gx);
+        ImuGY = (float)(IMU.gy);
+        ImuGZ = (float)(IMU.gz);
+      }
+    }
+  }
+  if ((currentMillis - previousMillis) >= 700 && runState == 1) {
+    M5.Lcd.fillScreen(BLACK);
+    M5.Lcd.setTextColor(GREEN , BLACK);
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.setCursor(5, 0); M5.Lcd.print("ACCELEROMETER AND GYRO");
+    M5.Lcd.setCursor(0, 32); M5.Lcd.print("x");
+    M5.Lcd.setCursor(x, 32); M5.Lcd.print("y");
+    M5.Lcd.setCursor(y, 32); M5.Lcd.print("z");
 
+   
+    if (ImuAX <= (setDefault_Ax + notiAx)*-1 || ImuAX >= (setDefault_Ax + notiAx)*1){
+      M5.Lcd.setTextColor(RED , BLACK);
+      M5.Lcd.setCursor(0, 48 * 2); M5.Lcd.print(ImuAX);
+      M5.Lcd.setTextColor(YELLOW , BLACK);
+    }else{
       M5.Lcd.setTextColor(YELLOW , BLACK);
       M5.Lcd.setCursor(0, 48 * 2); M5.Lcd.print(ImuAX);
-      M5.Lcd.setCursor(x, 48 * 2); M5.Lcd.print(ImuAY);
-      M5.Lcd.setCursor(y, 48 * 2); M5.Lcd.print(ImuAZ);
-      M5.Lcd.setCursor(z, 48 * 2); M5.Lcd.print("mg");
-
-      M5.Lcd.setCursor(0, 64 * 2); M5.Lcd.print(ImuGX);
-      M5.Lcd.setCursor(x, 64 * 2); M5.Lcd.print(ImuGY);
-      M5.Lcd.setCursor(y, 64 * 2); M5.Lcd.print(ImuGZ);
-      M5.Lcd.setCursor(z, 64 * 2); M5.Lcd.print("deg/s");
     }
-    delay(1500);
-  }
+    M5.Lcd.setCursor(x, 48 * 2); M5.Lcd.print(ImuAY);
+    M5.Lcd.setCursor(y, 48 * 2); M5.Lcd.print(ImuAZ);
+    M5.Lcd.setCursor(z, 48 * 2); M5.Lcd.print("mg");
 
-  if (M5.BtnA.wasReleased() && runState == 0) {
-    runState = 1;
+    M5.Lcd.setCursor(0, 64 * 2); M5.Lcd.print(ImuGX);
+    M5.Lcd.setCursor(x, 64 * 2); M5.Lcd.print(ImuGY);
+    M5.Lcd.setCursor(y, 64 * 2); M5.Lcd.print(ImuGZ);
+    M5.Lcd.setCursor(z, 64 * 2); M5.Lcd.print("deg/s");
+    M5.Lcd.setTextColor(WHITE , BLACK);
+    M5.Lcd.setCursor(20, 220);
+    M5.Lcd.print(setDefault_Ax);
     previousMillis = currentMillis;
+    Serial.println(setDefault_Ax);
+  }
+  if (M5.BtnB.wasReleased() && saveState == 0) {
+    saveState = 1;
+    previousMillis_Save = currentMillis;
     Time = currentMillis;
   }
   if (runState == 1) {
