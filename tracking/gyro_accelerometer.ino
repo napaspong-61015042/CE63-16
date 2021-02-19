@@ -61,112 +61,123 @@ void loop() {
              IMU.magbias[2];
 
 
-    if (count % 10) {
-      int x = 64 + 10;
-      int y = 128 + 20;
-      int z = 192 + 30;
-      ImuAX = (float)(1000 * IMU.ax);
-      ImuAY = (float)(1000 * IMU.ay);
-      ImuAZ = (float)(1000 * IMU.az);
-      ImuGX = (float)(IMU.gx);
-      ImuGY = (float)(IMU.gy);
-      ImuGZ = (float)(IMU.gz);
+   
+      if (count % 10) {
 
-      M5.Lcd.fillScreen(BLACK);
-      M5.Lcd.setTextColor(GREEN , BLACK);
-      M5.Lcd.setTextSize(2);
-      M5.Lcd.setCursor(5, 0); M5.Lcd.print("ACCELEROMETER AND GYRO");
-      M5.Lcd.setCursor(0, 32); M5.Lcd.print("x");
-      M5.Lcd.setCursor(x, 32); M5.Lcd.print("y");
-      M5.Lcd.setCursor(y, 32); M5.Lcd.print("z");
+        ImuAX = (float)(1000 * IMU.ax);
+        ImuAY = (float)(1000 * IMU.ay);
+        ImuAZ = (float)(1000 * IMU.az);
+        ImuGX = (float)(IMU.gx);
+        ImuGY = (float)(IMU.gy);
+        ImuGZ = (float)(IMU.gz);
+      }
+    }
+  }
+  if ((currentMillis - previousMillis) >= 700 && runState == 1) {
+    M5.Lcd.fillScreen(BLACK);
+    M5.Lcd.setTextColor(GREEN , BLACK);
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.setCursor(5, 0); M5.Lcd.print("ACCELEROMETER AND GYRO");
+    M5.Lcd.setCursor(0, 32); M5.Lcd.print("x");
+    M5.Lcd.setCursor(x, 32); M5.Lcd.print("y");
+    M5.Lcd.setCursor(y, 32); M5.Lcd.print("z");
 
+   
+    if (ImuAX <= (setDefault_Ax + notiAx)*-1 || ImuAX >= (setDefault_Ax + notiAx)*1){
+      M5.Lcd.setTextColor(RED , BLACK);
+      M5.Lcd.setCursor(0, 48 * 2); M5.Lcd.print(ImuAX);
+      M5.Lcd.setTextColor(YELLOW , BLACK);
+    }else{
       M5.Lcd.setTextColor(YELLOW , BLACK);
       M5.Lcd.setCursor(0, 48 * 2); M5.Lcd.print(ImuAX);
-      M5.Lcd.setCursor(x, 48 * 2); M5.Lcd.print(ImuAY);
-      M5.Lcd.setCursor(y, 48 * 2); M5.Lcd.print(ImuAZ);
-      M5.Lcd.setCursor(z, 48 * 2); M5.Lcd.print("mg");
-
-      M5.Lcd.setCursor(0, 64 * 2); M5.Lcd.print(ImuGX);
-      M5.Lcd.setCursor(x, 64 * 2); M5.Lcd.print(ImuGY);
-      M5.Lcd.setCursor(y, 64 * 2); M5.Lcd.print(ImuGZ);
-      M5.Lcd.setCursor(z, 64 * 2); M5.Lcd.print("deg/s");
     }
-    delay(1500);
-  }
+    M5.Lcd.setCursor(x, 48 * 2); M5.Lcd.print(ImuAY);
+    M5.Lcd.setCursor(y, 48 * 2); M5.Lcd.print(ImuAZ);
+    M5.Lcd.setCursor(z, 48 * 2); M5.Lcd.print("mg");
 
-  if (M5.BtnA.wasReleased() && runState == 0) {
-    runState = 1;
+    M5.Lcd.setCursor(0, 64 * 2); M5.Lcd.print(ImuGX);
+    M5.Lcd.setCursor(x, 64 * 2); M5.Lcd.print(ImuGY);
+    M5.Lcd.setCursor(y, 64 * 2); M5.Lcd.print(ImuGZ);
+    M5.Lcd.setCursor(z, 64 * 2); M5.Lcd.print("deg/s");
+    M5.Lcd.setTextColor(WHITE , BLACK);
+    M5.Lcd.setCursor(20, 220);
+    M5.Lcd.print(setDefault_Ax);
     previousMillis = currentMillis;
+    Serial.println(setDefault_Ax);
+  }
+  if (M5.BtnB.wasReleased() && saveState == 0) {
+    saveState = 1;
+    previousMillis_Save = currentMillis;
     Time = currentMillis;
   }
   if (runState == 1) {
     M5.Lcd.setTextColor(WHITE , BLACK);
     M5.Lcd.setCursor(20, 220);
     M5.Lcd.print(Time);
-    if ((currentMillis - previousMillis) >= 5000 && (currentMillis - previousMillis) <= 5000 + 250) {
+    if ((currentMillis - previousMillis) >= 5000 && (currentMillis - previousMillis) <= 5000 + 500) {
       dataLog[0][0] = ImuAX;
       dataLog[1][0] = ImuAY;
       dataLog[2][0] = ImuAZ;
       dataLog[3][0] = ImuGX;
       dataLog[4][0] = ImuGY;
       dataLog[5][0] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 5250 && (currentMillis - previousMillis) <= 5250 + 250) {
+    }else if((currentMillis - previousMillis) >= 5500 && (currentMillis - previousMillis) <= 5500 + 500) {
       dataLog[0][1] = ImuAX;
       dataLog[1][1] = ImuAY;
       dataLog[2][1] = ImuAZ;
       dataLog[3][1] = ImuGX;
       dataLog[4][1] = ImuGY;
       dataLog[5][1] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 5500 && (currentMillis - previousMillis) <= 5500 + 250) {
+    }else if((currentMillis - previousMillis) >= 6000 && (currentMillis - previousMillis) <= 6000 + 500) {
       dataLog[0][2] = ImuAX;
       dataLog[1][2] = ImuAY;
       dataLog[2][2] = ImuAZ;
       dataLog[3][2] = ImuGX;
       dataLog[4][2] = ImuGY;
       dataLog[5][2] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 5750 && (currentMillis - previousMillis) <= 5750 + 250) {
+    }else if((currentMillis - previousMillis) >= 6500 && (currentMillis - previousMillis) <= 6500 + 250) {
       dataLog[0][3] = ImuAX;
       dataLog[1][3] = ImuAY;
       dataLog[2][3] = ImuAZ;
       dataLog[3][3] = ImuGX;
       dataLog[4][3] = ImuGY;
       dataLog[5][3] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 6000 && (currentMillis - previousMillis) <= 6000 + 250) {
+    }else if((currentMillis - previousMillis) >= 7000 && (currentMillis - previousMillis) <= 7000 + 500) {
       dataLog[0][4] = ImuAX;
       dataLog[1][4] = ImuAY;
       dataLog[2][4] = ImuAZ;
       dataLog[3][4] = ImuGX;
       dataLog[4][4] = ImuGY;
       dataLog[5][4] = ImuGZ;   
-    }else if((currentMillis - previousMillis) >= 6250 && (currentMillis - previousMillis) <= 6250 + 250) {
+    }else if((currentMillis - previousMillis) >= 7500 && (currentMillis - previousMillis) <= 7500 + 500) {
       dataLog[0][5] = ImuAX;
       dataLog[1][5] = ImuAY;
       dataLog[2][5] = ImuAZ;
       dataLog[3][5] = ImuGX;
       dataLog[4][5] = ImuGY;
       dataLog[5][5] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 6500 && (currentMillis - previousMillis) <= 6500 + 250) {
+    }else if((currentMillis - previousMillis) >= 8000 && (currentMillis - previousMillis) <= 8000 + 500) {
       dataLog[0][6] = ImuAX;
       dataLog[1][6] = ImuAY;
       dataLog[2][6] = ImuAZ;
       dataLog[3][6] = ImuGX;
       dataLog[4][6] = ImuGY;
       dataLog[5][6] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 6750 && (currentMillis - previousMillis) <= 6750 + 250) {
+    }else if((currentMillis - previousMillis) >= 8500 && (currentMillis - previousMillis) <= 8500 + 500) {
       dataLog[0][7] = ImuAX;
       dataLog[1][7] = ImuAY;
       dataLog[2][7] = ImuAZ;
       dataLog[3][7] = ImuGX;
       dataLog[4][7] = ImuGY;
       dataLog[5][7] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 7000 && (currentMillis - previousMillis) <= 7000 + 250) {
+    }else if((currentMillis - previousMillis) >= 9000 && (currentMillis - previousMillis) <= 9000 + 500) {
       dataLog[0][8] = ImuAX;
       dataLog[1][8] = ImuAY;
       dataLog[2][8] = ImuAZ;
       dataLog[3][8] = ImuGX;
       dataLog[4][8] = ImuGY;
       dataLog[5][8] = ImuGZ;
-      }else if((currentMillis - previousMillis) >= 7250 && (currentMillis - previousMillis) <= 7250 + 250) {
+      }else if((currentMillis - previousMillis) >= 9500 && (currentMillis - previousMillis) <= 9500 + 500) {
       dataLog[0][9] = ImuAX;
       dataLog[1][9] = ImuAY;
       dataLog[2][9] = ImuAZ;
