@@ -32,7 +32,8 @@ class _HomeState extends State<Home> {
   String textValue = 'Hello World !';
   FirebaseMessaging firebaseMessaging = new FirebaseMessaging();
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  new FlutterLocalNotificationsPlugin();
+      new FlutterLocalNotificationsPlugin();
+
   // Method
 
   @override
@@ -69,9 +70,13 @@ class _HomeState extends State<Home> {
 
   showNotification(Map<String, dynamic> msg) async {
     var android = new AndroidNotificationDetails(
-      'sdffds dsffds',
-      "CHANNLE NAME",
-      "channelDescription",
+      'your channel id',
+      'your channel name',
+      'your channel description',
+      importance: Importance.max,
+      priority: Priority.max,
+      ticker: 'ticker',
+      playSound: true,
     );
     var iOS = new IOSNotificationDetails();
     var platform = new NotificationDetails(android: android, iOS: iOS);
@@ -87,7 +92,7 @@ class _HomeState extends State<Home> {
     setState(() {});
   }
 
-  void readData(){
+  void readData() {
     databaseReference.once().then((DataSnapshot snapshot) {
       print('Data : ${snapshot.value}');
     });
@@ -172,7 +177,6 @@ class _HomeState extends State<Home> {
 //                context, MaterialPageRoute(builder: (context) => SecondPage()));
           },
           child: Icon(
-
             Icons.power_settings_new,
             color: ColorPalette.black,
             size: 45.0,
@@ -196,8 +200,8 @@ class _HomeState extends State<Home> {
           height: 90.0,
           minWidth: 50.0,
           onPressed: () {
-            Navigator.push(
-                context, MaterialPageRoute(builder: (context) => historyPage()));
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => historyPage()));
           },
           child: ListTile(
             //จัดวางองค์ประกอบใน card

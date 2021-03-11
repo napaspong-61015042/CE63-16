@@ -45,6 +45,7 @@ class _LoginPageState extends State<LoginPage> {
             email: emailString, password: passwordString)
         .then((response) {
       print('Authen Success');
+      //print(response.user.uid);
       MaterialPageRoute materialPageRoute =
           MaterialPageRoute(builder: (BuildContext context) => Home());
       Navigator.of(context).pushAndRemoveUntil(

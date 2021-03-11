@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'color_palette.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'icon_data.dart';
 import 'home.dart';
 import 'loginPage.dart';
@@ -21,6 +22,23 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmController = TextEditingController();
+  TextEditingController _uid = TextEditingController();
+
+
+
+
+  sendMessage(String uid) {
+
+
+  print(uid);
+    print("hi");
+    var _firebaseRef = FirebaseDatabase().reference().child('users').child(uid);
+    _firebaseRef.push().set({
+      "message": "_txtCtrl.text",
+      "timestamp": DateTime.now().millisecondsSinceEpoch
+      
+    });
+  }
 
   Widget nameText() {
     return TextFormField(
@@ -214,6 +232,7 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+
   Future<void> registerThread() async {
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
@@ -222,6 +241,7 @@ class _RegisterPageState extends State<RegisterPage> {
       await firebaseAuth
           .createUserWithEmailAndPassword(email: email, password: password)
           .then((response) {
+            sendMessage(response.user.uid);
         print('Register Success for Email = $email');
         Navigator.push(context,
             MaterialPageRoute(builder: (context) => LoginPage()));
