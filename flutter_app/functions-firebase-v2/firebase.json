@@ -1,0 +1,22 @@
+{
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "emulators": {
+    "auth": {
+      "host": "localhost",
+      "port": 9099
+    },
+    "functions": {
+      "host": "localhost",
+      "port": 5001
+    },
+    "database": {
+      "host": "localhost",
+      "port": 9000
+    },
+    "ui": {
+      "enabled": true
+    }
+  }
+}
