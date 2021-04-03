@@ -1,169 +1,186 @@
-/* Test - sample V.1*/
-#include <M5Stack.h>
+#define M5STACK_MPU9250
 #include "BLEDevice.h"
-//#include "BLEScan.h"
+#include "BLEScan.h"
+#include <M5Stack.h>
+#include <base64.h>
 
-// The remote service we wish to connect to.
+String deviceID = "001";
+
 static BLEUUID serviceUUID("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
-// The characteristic of the remote service we are interested in.
-static BLEUUID    charUUID("beb5483e-36e1-4688-b7f5-ea07361b26a8");
+static BLEUUID charUUID("beb5483e-36e1-4688-b7f5-ea07361b26a8");
 
 static boolean doConnect = false;
 static boolean connected = false;
 static boolean doScan = false;
-static BLERemoteCharacteristic* pRemoteCharacteristic;
-static BLEAdvertisedDevice* myDevice;
+static BLERemoteCharacteristic *pRemoteCharacteristic;
+static BLEAdvertisedDevice *myDevice;
+static BLEClient *pClient;
 
-static void notifyCallback(
-  BLERemoteCharacteristic* pBLERemoteCharacteristic,
-  uint8_t* pData,
-  size_t length,
-  bool isNotify) {
+static void notifyCallback(BLERemoteCharacteristic *pBLERemoteCharacteristic,
+                           
+
+                           uint8_t *pData, size_t length, bool isNotify) {
   Serial.print("Notify callback for characteristic ");
   Serial.print(pBLERemoteCharacteristic->getUUID().toString().c_str());
   Serial.print(" of data length ");
   Serial.println(length);
   Serial.print("data: ");
-  Serial.println((char*)pData);
+  Serial.println((char *)pData);
 }
 
 class MyClientCallback : public BLEClientCallbacks {
-    void onConnect(BLEClient* pclient) {
-    }
+  void onConnect(BLEClient *pclient) {
+    M5.Lcd.fillScreen(GREEN);
+    M5.Lcd.setTextColor(WHITE);
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.setCursor(0, 160);
+    M5.Lcd.printf("  Connect BLE !");
+    connected = true;
+  }
 
-    void onDisconnect(BLEClient* pclient) {
-      connected = false;
-      Serial.println("onDisconnect");
-    }
+  void onDisconnect(BLEClient *pclient) {
+    M5.Lcd.fillScreen(RED);
+    M5.Lcd.setTextColor(WHITE);
+    M5.Lcd.setTextSize(2);
+    M5.Lcd.setCursor(0, 160);
+    M5.Lcd.printf("  Disconnect BLE !");
+    Serial.println("onDisconnect");
+    connected = false;
+  }
 };
 
-bool connectToServer() {
-  Serial.print("Forming a connection to ");
-  Serial.println(myDevice->getAddress().toString().c_str());
+class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
 
-  BLEClient*  pClient  = BLEDevice::createClient();
-  Serial.println(" - Created client");
+  void onResult(BLEAdvertisedDevice advertisedDevice) {
 
-  pClient->setClientCallbacks(new MyClientCallback());
-
-  // Connect to the remove BLE Server.
-  pClient->connect(myDevice);  // if you pass BLEAdvertisedDevice instead of address, it will be recognized type of peer device address (public or private)
-  Serial.println(" - Connected to server");
-
-  // Obtain a reference to the service we are after in the remote BLE server.
-  BLERemoteService* pRemoteService = pClient->getService(serviceUUID);
-  if (pRemoteService == nullptr) {
-    Serial.print("Failed to find our service UUID: ");
-    Serial.println(serviceUUID.toString().c_str());
-    pClient->disconnect();
-    return false;
+    Serial.print("BLE Advertised Device found: ");
+    Serial.print(advertisedDevice.toString().c_str());
+    Serial.println(advertisedDevice.getRSSI());
+    if (advertisedDevice.haveServiceUUID() &&
+        advertisedDevice.isAdvertisingService(serviceUUID)) {
+      BLEDevice::getScan()->stop();
+      myDevice = new BLEAdvertisedDevice(advertisedDevice);
+      doConnect = true;
+      doScan = true;
+    }
   }
-  Serial.println(" - Found our service");
+};
 
+unsigned long previousMillis = 0;
+unsigned long previousMillis_sendData = 0;
+unsigned long previousMillis_readData = 0;
 
-  // Obtain a reference to the characteristic in the service of the remote BLE server.
-  pRemoteCharacteristic = pRemoteService->getCharacteristic(charUUID);
-  if (pRemoteCharacteristic == nullptr) {
-    Serial.print("Failed to find our characteristic UUID: ");
-    Serial.println(charUUID.toString().c_str());
-    pClient->disconnect();
-    return false;
-  }
-  Serial.println(" - Found our characteristic");
+float accX = 0.0F;
+float accY = 0.0F;
+float accZ = 0.0F;
+float temp = 0.0F;
 
-  // Read the value of the characteristic.
-  if (pRemoteCharacteristic->canRead()) {
-    std::string value = pRemoteCharacteristic->readValue();
-    Serial.print("The characteristic value was: ");
-    Serial.println(value.c_str());
-  }
+float defaultMinX = -4;
+float defaultMaxX = 2;
 
-  if (pRemoteCharacteristic->canNotify())
-    pRemoteCharacteristic->registerForNotify(notifyCallback);
+float liftMinY = -4;
+float liftMaxY = 4;
+float accXvalue, accYvalue, accZvalue;
+String carStatusText = "Default";
+int carStatusCode = 1;
+int sendStatus = 0;
+int oldCarStatusCode = 1;
+String dataSend = "";
+            
 
-  connected = true;
-  return true;
+String encoded = "";
+double mapf(double val, double in_min, double in_max, double out_min,
+
+            double out_max) {
+  return (val - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-/**
-   Scan for BLE servers and find the first one that advertises the service we are looking for.
-*/
-class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
-    /**
-        Called for each advertising BLE server.
-    */
-    void onResult(BLEAdvertisedDevice advertisedDevice) {
-      Serial.print("BLE Advertised Device found: ");
-      Serial.println(advertisedDevice.toString().c_str());
-
-      // We have found a device, let us now see if it contains the service we are looking for.
-      if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID)) {
-
-        BLEDevice::getScan()->stop();
-        myDevice = new BLEAdvertisedDevice(advertisedDevice);
-        doConnect = true;
-        doScan = true;
-
-      } // Found our server
-    } // onResult
-}; // MyAdvertisedDeviceCallbacks
-
 
 void setup() {
-
   M5.begin();
   M5.Power.begin();
+  M5.IMU.Init();
 
+  Serial.println("Initialization done.");
 
-  Serial.begin(115200);
-  Serial.println("Starting Arduino BLE Client application...");
+ 
+  }
+
   BLEDevice::init("");
-
-  // Retrieve a Scanner and set the callback we want to use to be informed when we
-  // have detected a new device.  Specify that we want active scanning and start the
-  // scan to run for 5 seconds.
-  BLEScan* pBLEScan = BLEDevice::getScan();
+  BLEScan *pBLEScan = BLEDevice::getScan();
   pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
   pBLEScan->setInterval(1349);
   pBLEScan->setWindow(449);
   pBLEScan->setActiveScan(true);
-  pBLEScan->start(5, false);
-} // End of setup.
+  
+}
 
-
-// This is the Arduino main loop function.
 void loop() {
-  M5.update();
-  // If the flag "doConnect" is true then we have scanned for and found the desired
-  // BLE Server with which we wish to connect.  Now we connect to it.  Once we are
-  // connected we set the connected flag to be true.
+  unsigned long currentMillis = millis();
   if (doConnect == true) {
     if (connectToServer()) {
       Serial.println("We are now connected to the BLE Server.");
     } else {
-      Serial.println("We have failed to connect to the server; there is nothin more we will do.");
+      Serial.println("We have failed to connect to the server; there is nothin "
+                     "more we will do.");
     }
     doConnect = false;
   }
 
-  // If we are connected to a peer BLE Server, update the characteristic each time we are reached
-  // with the current time since boot.
   if (connected) {
-    String newValue;
-    if (M5.BtnA.wasReleased()) {
-      newValue = "Crasher down";
-    } else if (M5.BtnB.wasReleased()) {
-      newValue = "Move";
-    } else if (M5.BtnC.wasReleased()) {
-      newValue = "Lift";
-    } else {
-      newValue = "Default";
+    M5.update();
+    if ((currentMillis - previousMillis_readData) >= 1000) {
+    M5.IMU.getAccelData(&accX, &accY, &accZ);
+    M5.IMU.getTempData(&temp);
+    
+    accXvalue = mapf(accX, -1, 1, -10, 10);
+    accYvalue = mapf(accY, -1, 1, -10, 10);
+    accZvalue = mapf(accZ, -1, 1, -10, 10);
+    previousMillis_readData = currentMillis;
     }
-    pRemoteCharacteristic->writeValue(newValue.c_str(), newValue.length());
-    Serial.println("Send data : \"" + newValue + "\"");
+    if ((accXvalue >= defaultMinX && accXvalue <= defaultMaxX) &&
+        (accYvalue >= liftMinY && accYvalue <= liftMaxY)) {
+      carStatusText = "Default";
+      carStatusCode = 1;
+      dataSend = String(deviceID + "11");
+    } else if ((accXvalue < defaultMinX || accXvalue > defaultMaxX) &&
+               (accYvalue >= liftMinY && accYvalue <= liftMaxY)) {
+      carStatusText = "Crashdown";
+      carStatusCode = 2;
+      dataSend = String(deviceID + "12");
+    } else if ((accXvalue >= defaultMinX && accXvalue <= defaultMaxX) &&
+               (accYvalue < liftMinY || accYvalue > liftMaxY)) {
+      carStatusText = "Lift";
+      carStatusCode = 3;
+      dataSend = String(deviceID + "13");
+    } else if ((accXvalue < defaultMinX || accXvalue > defaultMaxX) &&
+               (accYvalue < liftMinY || accYvalue > liftMaxY)) {
+      carStatusText = "Lift";
+      carStatusCode = 3;
+      dataSend = String(deviceID + "13");
+    }
 
+    if ((currentMillis - previousMillis) >= 700) {
+
+      previousMillis = currentMillis;
+    }
+    if ((currentMillis - previousMillis_sendData) >= 500) {
+
+        if(sendStatus == 0){
+            pRemoteCharacteristic->writeValue(dataSend.c_str(), dataSend.length());
+            Serial.println("Send data : \"" + dataSend+ "\"");
+            oldCarStatusCode = carStatusCode;
+            sendStatus = 1;
+        }
+      previousMillis_sendData = currentMillis;
+    }
+
+    if(oldCarStatusCode != carStatusCode){
+    sendStatus = 0;
+  }
   } else if (doScan) {
-    BLEDevice::getScan()->start(0);  // this is just eample to start scan after disconnect, most likely there is better way to do it in arduino
+    BLEDevice::getScan()->start(0);
   }
 
-  delay(1000); // Delay a second between loops.
-} // End of loop
+
+   
+}
