@@ -27,15 +27,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
 
 
-  sendMessage(String uid) {
-
-
+  sendMessage(String uid,String name) {
   print(uid);
-    print("hi");
     var _firebaseRef = FirebaseDatabase().reference().child('users').child(uid);
-    _firebaseRef.push().set({
-      "message": "_txtCtrl.text",
-      "timestamp": DateTime.now().millisecondsSinceEpoch
+    _firebaseRef.set({
+      "name": name,
+      'login_status' : true,
+      'alert_status' : true,
+      "user_create": DateTime.now().millisecondsSinceEpoch
       
     });
   }
@@ -237,12 +236,14 @@ class _RegisterPageState extends State<RegisterPage> {
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
     String confirmPassword = confirmController.text.trim();
+    String name = nameController.text.trim();
     if (password == confirmPassword && password.length >= 6) {
       await firebaseAuth
           .createUserWithEmailAndPassword(email: email, password: password)
           .then((response) {
-            sendMessage(response.user.uid);
+            sendMessage(response.user.uid,name);
         print('Register Success for Email = $email');
+
         Navigator.push(context,
             MaterialPageRoute(builder: (context) => LoginPage()));
       }).catchError((response) {

@@ -7,10 +7,12 @@ import 'package:alarmsystem/screen/loginPage.dart';
 import 'CustomClipper.dart';
 import 'color_palette.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'icon_data.dart';
+import 'dart:io';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_switch/flutter_switch.dart';
+import 'dart:async';
 
 class Home extends StatefulWidget {
   @override
@@ -28,17 +30,24 @@ class _HomeState extends State<Home> {
   //Explicit (ตัวแปร)
   Color _buttonColor1 = ColorPalette.grey10;
   final databaseReference = FirebaseDatabase.instance.reference();
-
-  String textValue = 'Hello World !';
+  dynamic result = '';
+  bool _network = false;
+  String uidValue = '';
+  String device_id = '';
+  String getStatusText = '';
   FirebaseMessaging firebaseMessaging = new FirebaseMessaging();
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       new FlutterLocalNotificationsPlugin();
+  bool alertStatus = false;
 
   // Method
 
   @override
   void initState() {
+
+    uidStatus();
     super.initState();
+
 
     var android = new AndroidInitializationSettings('mipmap/ic_launcher');
     var ios = new IOSInitializationSettings();
@@ -63,12 +72,51 @@ class _HomeState extends State<Home> {
         .listen((IosNotificationSettings setting) {
       print('IOS Setting Registed');
     });
-    firebaseMessaging.getToken().then((token) {
-      update(token);
-    });
+
+  }
+  Future<void> uidStatus() async {
+      FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+      User user = await firebaseAuth.currentUser;
+      if (user != null) {
+        //print(user);
+        uidValue = user.uid;
+        print('Auth Success: ${uidValue}');
+        try {
+          result = await InternetAddress.lookup('www.google.com').timeout(const Duration(seconds: 2));
+          if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+            DatabaseReference updateLoginStatus = new FirebaseDatabase()
+                .reference()
+                .child('users/${uidValue}/');
+            updateLoginStatus.update({'login_status': true}).then((result){
+              print('login_status: ${true}');
+            }).catchError((result){
+              print('login_status: ${false}');
+            });
+
+            DatabaseReference getStatusAlert = new FirebaseDatabase()
+                .reference()
+                .child('users/${uidValue}/alert_status');
+            getStatusAlert.once().then((DataSnapshot alertValue) {
+              setState(() {
+                alertStatus = alertValue.value;
+                print('AlertDefault From: ${alertStatus}');
+              });
+            }).catchError((result) {
+              print('AlertDefault From: false (Can\'t get)');
+            });
+            print('connected');
+          }
+        } on TimeoutException catch (e) {
+          print('not connected timeout');
+          showError('Please check your internet connection !');
+        } on SocketException catch (_) {
+          print('not connected');
+        }
+      }
   }
 
   showNotification(Map<String, dynamic> msg) async {
+    print(msg);
     var android = new AndroidNotificationDetails(
       'your channel id',
       'your channel name',
@@ -81,22 +129,52 @@ class _HomeState extends State<Home> {
     var iOS = new IOSNotificationDetails();
     var platform = new NotificationDetails(android: android, iOS: iOS);
     await flutterLocalNotificationsPlugin.show(
-        0, "This is title", "this is demo", platform);
+        0, msg['notification']['title'], msg['notification']['body'], platform);
   }
 
-  update(String token) {
+  update(String token,String uid) {
     print(token);
-    DatabaseReference databaseReference = new FirebaseDatabase().reference();
-    databaseReference.child('fcm-token/${token}').set({"token": token});
-    textValue = token;
+    DatabaseReference updateToken = new FirebaseDatabase().reference();
+    updateToken.child('users/${uid}/fcm_token/').set({"token": token});
     setState(() {});
   }
 
-  void readData() {
-    databaseReference.once().then((DataSnapshot snapshot) {
-      print('Data : ${snapshot.value}');
-    });
+  setAlert(bool value) {
+      DatabaseReference setAlert = new FirebaseDatabase().reference().child('users/${uidValue}/');
+      setAlert.update({'alert_status' : value}).then((result) {
+        print('setAlertSuccess ${value}');
+        setState(() {
+          alertStatus = value;
+        });
+      }).catchError((result){
+        print('error setAlert');
+      });
+
+
   }
+
+  readStatus() {
+
+    DatabaseReference readDeviceId = new FirebaseDatabase().reference().child('users/${uidValue}/device_id');
+    readDeviceId.once().then((DataSnapshot snapshot) {
+       device_id = snapshot.value;
+       DatabaseReference readStatus = new FirebaseDatabase().reference().child('device/${device_id}/');
+       readStatus.once().then((DataSnapshot snapshot){
+         if(snapshot.value['device_connect'] == "24:0A:C4:AA:14:94"){
+           getStatusText = 'The motorcycle is connected to Base station 1';
+         }else if(snapshot.value['device_connect'] == "24:0A:C4:AA:CD:E8") {
+           getStatusText = 'The motorcycle is connected to Base station 2';
+         }else{
+           getStatusText = 'The motorcycle is disconnected from Base station';
+         }
+         showCkeckStatus(getStatusText);
+         print(getStatusText);
+       });
+     }).catchError((result){
+      getStatusText = 'Can\'t connected to network !';
+      showError(getStatusText);
+    });
+   }
 
   Widget signoutButton() {
     return IconButton(
@@ -149,7 +227,11 @@ class _HomeState extends State<Home> {
 
   Future<void> processSignOut() async {
     FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+
+    DatabaseReference setSignout = new FirebaseDatabase().reference().child('users/${uidValue}');
+
     await firebaseAuth.signOut().then((response) {
+      setSignout.update({'login_status': false});
       MaterialPageRoute materialPageRoute =
           MaterialPageRoute(builder: (BuildContext context) => LoginPage());
       Navigator.of(context).pushAndRemoveUntil(
@@ -161,30 +243,31 @@ class _HomeState extends State<Home> {
 
   Widget OnOff() {
     return Container(
-      child: Card(
-        margin: EdgeInsets.only(top: 20.0, right: 127.0, left: 105.0),
-        color: _buttonColor1,
-        elevation: 0.0,
-        shape: CircleBorder(),
-        child: FlatButton(
-          height: 120.0,
-          minWidth: 100.0,
-          onPressed: () {
-            setState(() {
-              _buttonColor1 = Colors.green.shade800;
-            });
-//            Navigator.push(
-//                context, MaterialPageRoute(builder: (context) => SecondPage()));
-          },
-          child: Icon(
-            Icons.power_settings_new,
-            color: ColorPalette.black,
-            size: 45.0,
+        padding: EdgeInsets.only(top: 50.0, bottom: 50.0),
+        alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          FlutterSwitch(
+            width: 110.0,
+            height: 47.0,
+            activeColor: Colors.green,
+            valueFontSize: 18.0,
+            toggleSize: 40.0,
+            value: alertStatus,
+            borderRadius: 30.0,
+            //padding: 8.0,
+            showOnOff: true,
+            onToggle: (val) {
+              setAlert(val);
+            },
           ),
-        ),
-      ),
+        ],
+      )
     );
   }
+
+  // button History Alert
 
   Widget Alert() {
     return Container(
@@ -201,7 +284,7 @@ class _HomeState extends State<Home> {
           minWidth: 50.0,
           onPressed: () {
             Navigator.push(context,
-                MaterialPageRoute(builder: (context) => historyPage()));
+                MaterialPageRoute(builder: (context) => HistoryPage()));
           },
           child: ListTile(
             //จัดวางองค์ประกอบใน card
@@ -223,6 +306,8 @@ class _HomeState extends State<Home> {
     );
   }
 
+  // button check status
+
   Widget checkStatus() {
     return Container(
       alignment: Alignment.center,
@@ -237,7 +322,7 @@ class _HomeState extends State<Home> {
           height: 90.0,
           minWidth: 50.0,
           onPressed: () {
-            readData();
+            readStatus();
             // Navigator.push(
             //     context, MaterialPageRoute(builder: (context) => SecondPage()));
           },
@@ -259,6 +344,72 @@ class _HomeState extends State<Home> {
       ),
     );
   }
+
+
+
+  void showCkeckStatus(String status) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: new Center(
+              child: Text(
+                'Motorcycle Status',
+                style: new TextStyle(fontSize: 18.0,color: ColorPalette.black),
+              ),
+            ),
+            content: Text('${status}'),
+            actions: <Widget>[
+              ckeckStatusokButton(),
+            ],
+          );
+        });
+  }
+
+  void showError(String error) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: new Center(
+              child: Text(
+                'Error',
+                style: new TextStyle(fontSize: 18.0,color: ColorPalette.black),
+              ),
+            ),
+            content: Text('${error}'),
+            actions: <Widget>[
+              ckeckErrorButton(),
+            ],
+          );
+        });
+  }
+
+  Widget ckeckStatusokButton() {
+
+    return FlatButton(
+      child: Text('OK'),
+      onPressed: () {
+
+        Navigator.of(context).pop();
+
+      },
+    );
+  }
+
+  Widget ckeckErrorButton() {
+
+    return FlatButton(
+      child: Text('OK'),
+      onPressed: () {
+
+        Navigator.of(context).pop();
+        uidStatus();
+      },
+    );
+  }
+
+  //end button check status
 
   @override
   Widget build(BuildContext context) {
@@ -288,13 +439,15 @@ class _HomeState extends State<Home> {
               new Container(
                 child: Padding(
                   padding: const EdgeInsets.all(25.0),
-                  child: Column(
-                    children: <Widget>[
-                      OnOff(),
-                      Alert(),
-                      checkStatus(),
-                    ],
-                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: <Widget>[
+                        OnOff(),
+                        Alert(),
+                        checkStatus(),
+                      ],
+                    ),
+                  )
                 ),
               ),
             ],

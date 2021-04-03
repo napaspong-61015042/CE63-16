@@ -1,3 +1,4 @@
+import 'package:alarmsystem/screen/historyPage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:alarmsystem/screen/home.dart';
@@ -45,7 +46,7 @@ class _LoginPageState extends State<LoginPage> {
             email: emailString, password: passwordString)
         .then((response) {
       print('Authen Success');
-      //print(response.user.uid);
+      print(response.user.uid);
       MaterialPageRoute materialPageRoute =
           MaterialPageRoute(builder: (BuildContext context) => Home());
       Navigator.of(context).pushAndRemoveUntil(
