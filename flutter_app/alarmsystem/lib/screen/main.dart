@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:alarmsystem/screen/home.dart';
 import 'package:alarmsystem/screen/loginPage.dart';
-import 'screen/registerPage.dart';
+import 'registerPage.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 

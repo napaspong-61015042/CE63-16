@@ -39,6 +39,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+
   Future<User> checkAuthen() async {
     FirebaseAuth firebaseAuth = FirebaseAuth.instance;
     await firebaseAuth
