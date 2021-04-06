@@ -162,3 +162,16 @@ void loop() {
       myFile.println("Accel  X" + dataLog[0][7] + " " +  "Y" + dataLog[1][7] + " " + "Z" + dataLog[2][7] + " " + "GYRO" + " " + "X" + dataLog[3][7] + " " + "Y" + dataLog[4][7] + " " + "Z" + dataLog[5][7]);
       myFile.println("Accel  X" + dataLog[0][8] + " " +  "Y" + dataLog[1][8] + " " + "Z" + dataLog[2][8] + " " + "GYRO" + " " + "X" + dataLog[3][8] + " " + "Y" + dataLog[4][8] + " " + "Z" + dataLog[5][8]);
       myFile.println("Accel  X" + dataLog[0][9] + " " +  "Y" + dataLog[1][9] + " " + "Z" + dataLog[2][9] + " " + "GYRO" + " " + "X" + dataLog[3][9] + " " + "Y" + dataLog[4][9] + " " + "Z" + dataLog[5][9]);
+      
+      
+      Serial.println("Done.");
+      M5.Lcd.setTextColor(WHITE , BLACK);
+      M5.Lcd.setCursor(100, 220);
+      M5.Lcd.print("Save Done");
+      //saveState = 0;
+    } else {
+      Serial.println("error opening");
+    }
+  }
+  delay(1);
+}
