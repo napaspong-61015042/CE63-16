@@ -32,6 +32,8 @@ class _RegisterPageState extends State<RegisterPage> {
     var _firebaseRef = FirebaseDatabase().reference().child('users').child(uid);
     _firebaseRef.set({
       "name": name,
+      'login_status' : true,
+      'alert_status' : true,
       "user_create": DateTime.now().millisecondsSinceEpoch
       
     });
@@ -241,6 +243,7 @@ class _RegisterPageState extends State<RegisterPage> {
           .then((response) {
             sendMessage(response.user.uid,name);
         print('Register Success for Email = $email');
+
         Navigator.push(context,
             MaterialPageRoute(builder: (context) => LoginPage()));
       }).catchError((response) {

@@ -11,6 +11,9 @@ import 'icon_data.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_switch/flutter_switch.dart';
+import 'package:custom_switch/custom_switch.dart';
+import 'dart:async';
 
 class Home extends StatefulWidget {
   @override
@@ -34,13 +37,15 @@ class _HomeState extends State<Home> {
   FirebaseMessaging firebaseMessaging = new FirebaseMessaging();
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       new FlutterLocalNotificationsPlugin();
+  bool alertStatus;
 
   // Method
 
   @override
   void initState() {
-    super.initState();
     uidStatus();
+    super.initState();
+
 
 
     var android = new AndroidInitializationSettings('mipmap/ic_launcher');
@@ -77,6 +82,16 @@ class _HomeState extends State<Home> {
     if (user != null) {
       //print(user);
       uidValue = user.uid;
+      DatabaseReference getStatusAlert = new FirebaseDatabase().reference().child('users/${uidValue}/alert_status');
+      getStatusAlert.once().then((DataSnapshot alertValue) {
+
+        setState(() {
+          alertStatus = alertValue.value;
+          print('db: ${alertStatus}');
+        });
+      });
+    }else{
+
     }
   }
 
@@ -99,17 +114,17 @@ class _HomeState extends State<Home> {
 
   update(String token,String uid) {
     print(token);
-    DatabaseReference databaseReference = new FirebaseDatabase().reference();
-    databaseReference.child('users/${uid}/fcm-token/').set({"token": token});
+    DatabaseReference updateToken = new FirebaseDatabase().reference();
+    updateToken.child('users/${uid}/fcm-token/').set({"token": token});
     textValue = token;
     setState(() {});
   }
 
-  void readData() {
-    databaseReference.once().then((DataSnapshot snapshot) {
-      print('Data : ${snapshot.value}');
-    });
-  }
+  // void readData() {
+  //   databaseReference.once().then((DataSnapshot snapshot) {
+  //     print('Data : ${snapshot.value}');
+  //   });
+  // }
 
   Widget signoutButton() {
     return IconButton(
@@ -162,7 +177,11 @@ class _HomeState extends State<Home> {
 
   Future<void> processSignOut() async {
     FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+
+    DatabaseReference setSignout = new FirebaseDatabase().reference().child('users/${uidValue}');
+
     await firebaseAuth.signOut().then((response) {
+      setSignout.update({'login_status': false});
       MaterialPageRoute materialPageRoute =
           MaterialPageRoute(builder: (BuildContext context) => LoginPage());
       Navigator.of(context).pushAndRemoveUntil(
@@ -174,30 +193,33 @@ class _HomeState extends State<Home> {
 
   Widget OnOff() {
     return Container(
-      child: Card(
-        margin: EdgeInsets.only(top: 20.0, right: 127.0, left: 105.0),
-        color: _buttonColor1,
-        elevation: 0.0,
-        shape: CircleBorder(),
-        child: FlatButton(
-          height: 120.0,
-          minWidth: 100.0,
-          onPressed: () {
-            setState(() {
-              _buttonColor1 = Colors.green.shade800;
-            });
-//            Navigator.push(
-//                context, MaterialPageRoute(builder: (context) => SecondPage()));
-          },
-          child: Icon(
-            Icons.power_settings_new,
-            color: ColorPalette.black,
-            size: 45.0,
+        padding: EdgeInsets.only(top: 50.0),
+        alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          FlutterSwitch(
+            width: 110.0,
+            height: 47.0,
+            activeColor: Colors.green,
+            valueFontSize: 18.0,
+            toggleSize: 40.0,
+            value: alertStatus,
+            borderRadius: 30.0,
+            //padding: 8.0,
+            showOnOff: true,
+            onToggle: (val) {
+              setState(() {
+                alertStatus = val;
+              });
+            },
           ),
-        ),
-      ),
+        ],
+      )
     );
   }
+
+  // button History Alert
 
   Widget Alert() {
     return Container(
@@ -236,6 +258,8 @@ class _HomeState extends State<Home> {
     );
   }
 
+  // button check status
+
   Widget checkStatus() {
     return Container(
       alignment: Alignment.center,
@@ -250,7 +274,7 @@ class _HomeState extends State<Home> {
           height: 90.0,
           minWidth: 50.0,
           onPressed: () {
-            readData();
+            showCkeckStatus();
             // Navigator.push(
             //     context, MaterialPageRoute(builder: (context) => SecondPage()));
           },
@@ -272,6 +296,41 @@ class _HomeState extends State<Home> {
       ),
     );
   }
+
+
+
+  void showCkeckStatus() {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: new Center(
+              child: Text(
+                'motorcycle status',
+                style: new TextStyle(fontSize: 18.0,color: ColorPalette.black),
+              ),
+            ),
+            content: Text('The motorcycle is connected to Base station 1.'),
+            actions: <Widget>[
+              ckeckStatusokButton(),
+            ],
+          );
+        });
+  }
+
+  Widget ckeckStatusokButton() {
+
+    return FlatButton(
+      child: Text('OK'),
+      onPressed: () {
+        Navigator.of(context).pop();
+
+      },
+    );
+  }
+
+
+  //end button check status
 
   @override
   Widget build(BuildContext context) {
@@ -301,13 +360,15 @@ class _HomeState extends State<Home> {
               new Container(
                 child: Padding(
                   padding: const EdgeInsets.all(25.0),
-                  child: Column(
-                    children: <Widget>[
-                      OnOff(),
-                      Alert(),
-                      checkStatus(),
-                    ],
-                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: <Widget>[
+                        OnOff(),
+                        Alert(),
+                        checkStatus(),
+                      ],
+                    ),
+                  )
                 ),
               ),
             ],
