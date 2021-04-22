@@ -108,18 +108,18 @@ void loop() {
   while (swSerial.available() > 0) {
     char inChar = swSerial.read();
     data += inChar;
-    if(data.length() == 5){
+    if (data.length() == 5) {
       Serial.println(data);
       break;
     }
   }
   if (data.length() == 5) {
-    
+
     dataSend  = data;
     data = "";
   }
   if (dataSend.length() > 0) {
-    
+
     Serial.println(dataSend);
     String deviceID = dataSend.substring(0, 3);
     Path = path + "/device_" + deviceID;
@@ -132,6 +132,7 @@ void loop() {
       if (Firebase.RTDB.setTimestamp(&fbdo, Path.c_str())) {
         Path = path + "/device_" + deviceID + "/history";
         json.clear().add("device_status", deviceStatus);
+        json.add("device_connect", WiFi.macAddress());
         if (Firebase.RTDB.pushJSON(&fbdo, Path.c_str(), &json))
         {
           Path = path + "/device_" + deviceID + "/history/" + fbdo.pushName() + "/device_status_uptime";
