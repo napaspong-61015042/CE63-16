@@ -66,3 +66,112 @@ void loop() {
   M5.Lcd.print(" degree");
   M5.Lcd.setCursor(0, 155);
   M5.Lcd.printf("Temperature : %.2f C", temp);
+  if (M5.BtnA.wasReleased() && saveState == 0) {
+    saveState = 1;
+    previousMillis_Save = currentMillis;
+    Time = currentMillis;
+  }
+  if (saveState == 1) {
+    M5.Lcd.setTextColor(WHITE , BLACK);
+    M5.Lcd.setCursor(20, 220);
+    M5.Lcd.print(Time);
+    if ((currentMillis - previousMillis_Save) >= 5000 && (currentMillis - previousMillis_Save) <= 5000 + 250) {
+      dataLog[0][0] = accX;
+      dataLog[1][0] = accY;
+      dataLog[2][0] = accZ;
+      dataLog[3][0] = gyroX;
+      dataLog[4][0] = gyroY;
+      dataLog[5][0] = gyroZ;
+    } else if ((currentMillis - previousMillis_Save) >= 5250 && (currentMillis - previousMillis_Save) <= 5250 + 250) {
+      dataLog[0][1] = accX;
+      dataLog[1][1] = accY;
+      dataLog[2][1] = accZ;
+      dataLog[3][1] = gyroX;
+      dataLog[4][1] = gyroY;
+      dataLog[5][1] = gyroZ;
+    } else if ((currentMillis - previousMillis_Save) >= 5500 && (currentMillis - previousMillis_Save) <= 5500 + 250) {
+      dataLog[0][2] = accX;
+      dataLog[1][2] = accY;
+      dataLog[2][2] = accZ;
+      dataLog[3][2] = gyroX;
+      dataLog[4][2] = gyroY;
+      dataLog[5][2] = gyroZ;
+    } else if ((currentMillis - previousMillis_Save) >= 5750 && (currentMillis - previousMillis_Save) <= 5750 + 250) {
+      dataLog[0][3] = accX;
+      dataLog[1][3] = accY;
+      dataLog[2][3] = accZ;
+      dataLog[3][3] = gyroX;
+      dataLog[4][3] = gyroY;
+      dataLog[5][3] = gyroZ;
+    } else if ((currentMillis - previousMillis_Save) >= 6000 && (currentMillis - previousMillis_Save) <= 6000 + 250) {
+      dataLog[0][4] = accX;
+      dataLog[1][4] = accY;
+      dataLog[2][4] = accZ;
+      dataLog[3][4] = gyroX;
+      dataLog[4][4] = gyroY;
+      dataLog[5][4] = gyroZ;
+    } else if ((currentMillis - previousMillis_Save) >= 6250 && (currentMillis - previousMillis_Save) <= 6250 + 250) {
+      dataLog[0][5] = accX;
+      dataLog[1][5] = accY;
+      dataLog[2][5] = accZ;
+      dataLog[3][5] = gyroX;
+      dataLog[4][5] = gyroY;
+      dataLog[5][5] = gyroZ;
+    } else if ((currentMillis - previousMillis_Save) >= 6500 && (currentMillis - previousMillis_Save) <= 6500 + 250) {
+      dataLog[0][6] = accX;
+      dataLog[1][6] = accY;
+      dataLog[2][6] = accZ;
+      dataLog[3][6] = gyroX;
+      dataLog[4][6] = gyroY;
+      dataLog[5][6] = gyroZ;
+    } else if ((currentMillis - previousMillis_Save) >= 6750 && (currentMillis - previousMillis_Save) <= 6750 + 250) {
+      dataLog[0][7] = accX;
+      dataLog[1][7] = accY;
+      dataLog[2][7] = accZ;
+      dataLog[3][7] = gyroX;
+      dataLog[4][7] = gyroY;
+      dataLog[5][7] = gyroZ;
+    } else if ((currentMillis - previousMillis_Save) >= 7000 && (currentMillis - previousMillis_Save) <= 7000 + 250) {
+      dataLog[0][8] = accX;
+      dataLog[1][8] = accY;
+      dataLog[2][8] = accZ;
+      dataLog[3][8] = gyroX;
+      dataLog[4][8] = gyroY;
+      dataLog[5][8] = gyroZ;
+    } else if ((currentMillis - previousMillis_Save) >= 7250 && (currentMillis - previousMillis_Save) <= 7250 + 250) {
+      dataLog[0][9] = accX;
+      dataLog[1][9] = accY;
+      dataLog[2][9] = accZ;
+      dataLog[3][9] = gyroX;
+      dataLog[4][9] = gyroY;
+      dataLog[5][9] = gyroZ;
+      saveState = 2;
+    }
+  }
+   if (saveState == 2) {
+    myFile = SD.open("/data.txt", FILE_WRITE);
+    if (myFile) {
+      Serial.print("Writing...");
+      myFile.println("Accel  X" + dataLog[0][0] + " " +  "Y" + dataLog[1][0] + " " + "Z" + dataLog[2][0] + " " + "GYRO" + " " + "X" + dataLog[3][0] + " " + "Y" + dataLog[4][0] + " " + "Z" + dataLog[5][0]);
+      myFile.println("Accel  X" + dataLog[0][1] + " " +  "Y" + dataLog[1][1] + " " + "Z" + dataLog[2][1] + " " + "GYRO" + " " + "X" + dataLog[3][1] + " " + "Y" + dataLog[4][1] + " " + "Z" + dataLog[5][1]);
+      myFile.println("Accel  X" + dataLog[0][2] + " " +  "Y" + dataLog[1][2] + " " + "Z" + dataLog[2][2] + " " + "GYRO" + " " + "X" + dataLog[3][2] + " " + "Y" + dataLog[4][2] + " " + "Z" + dataLog[5][2]);
+      myFile.println("Accel  X" + dataLog[0][3] + " " +  "Y" + dataLog[1][3] + " " + "Z" + dataLog[2][3] + " " + "GYRO" + " " + "X" + dataLog[3][3] + " " + "Y" + dataLog[4][3] + " " + "Z" + dataLog[5][3]);
+      myFile.println("Accel  X" + dataLog[0][4] + " " +  "Y" + dataLog[1][4] + " " + "Z" + dataLog[2][4] + " " + "GYRO" + " " + "X" + dataLog[3][4] + " " + "Y" + dataLog[4][4] + " " + "Z" + dataLog[5][4]);
+      myFile.println("Accel  X" + dataLog[0][5] + " " +  "Y" + dataLog[1][5] + " " + "Z" + dataLog[2][5] + " " + "GYRO" + " " + "X" + dataLog[3][5] + " " + "Y" + dataLog[4][5] + " " + "Z" + dataLog[5][5]);
+      myFile.println("Accel  X" + dataLog[0][6] + " " +  "Y" + dataLog[1][6] + " " + "Z" + dataLog[2][6] + " " + "GYRO" + " " + "X" + dataLog[3][6] + " " + "Y" + dataLog[4][6] + " " + "Z" + dataLog[5][6]);
+      myFile.println("Accel  X" + dataLog[0][7] + " " +  "Y" + dataLog[1][7] + " " + "Z" + dataLog[2][7] + " " + "GYRO" + " " + "X" + dataLog[3][7] + " " + "Y" + dataLog[4][7] + " " + "Z" + dataLog[5][7]);
+      myFile.println("Accel  X" + dataLog[0][8] + " " +  "Y" + dataLog[1][8] + " " + "Z" + dataLog[2][8] + " " + "GYRO" + " " + "X" + dataLog[3][8] + " " + "Y" + dataLog[4][8] + " " + "Z" + dataLog[5][8]);
+      myFile.println("Accel  X" + dataLog[0][9] + " " +  "Y" + dataLog[1][9] + " " + "Z" + dataLog[2][9] + " " + "GYRO" + " " + "X" + dataLog[3][9] + " " + "Y" + dataLog[4][9] + " " + "Z" + dataLog[5][9]);
+      
+      
+      Serial.println("Done.");
+      M5.Lcd.setTextColor(WHITE , BLACK);
+      M5.Lcd.setCursor(100, 220);
+      M5.Lcd.print("Save Done");
+      //saveState = 0;
+    } else {
+      Serial.println("error opening");
+    }
+  }
+  delay(1);
+}
