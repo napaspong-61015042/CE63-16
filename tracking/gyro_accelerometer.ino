@@ -1,219 +1,168 @@
 #include <M5Stack.h>
-#include "utility/MPU9250.h"
-#include <SPI.h>
-#include <SD.h>
-String dataLog[6][10];
-unsigned long previousMillis = 0;
-unsigned long Time = 0;
-int runState = 0;
-int saveState = 0;
-int ImuAX,ImuAY,ImuAZ,ImuGX,ImuGY,ImuGZ;
-MPU9250 IMU;
-unsigned long count = 0;
-File myFile;
+#include "BLEDevice.h"
+//#include "BLEScan.h"
+
+// The remote service we wish to connect to.
+static BLEUUID serviceUUID("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
+// The characteristic of the remote service we are interested in.
+static BLEUUID    charUUID("beb5483e-36e1-4688-b7f5-ea07361b26a8");
+
+static boolean doConnect = false;
+static boolean connected = false;
+static boolean doScan = false;
+static BLERemoteCharacteristic* pRemoteCharacteristic;
+static BLEAdvertisedDevice* myDevice;
+
+static void notifyCallback(
+  BLERemoteCharacteristic* pBLERemoteCharacteristic,
+  uint8_t* pData,
+  size_t length,
+  bool isNotify) {
+  Serial.print("Notify callback for characteristic ");
+  Serial.print(pBLERemoteCharacteristic->getUUID().toString().c_str());
+  Serial.print(" of data length ");
+  Serial.println(length);
+  Serial.print("data: ");
+  Serial.println((char*)pData);
+}
+
+class MyClientCallback : public BLEClientCallbacks {
+    void onConnect(BLEClient* pclient) {
+    }
+
+    void onDisconnect(BLEClient* pclient) {
+      connected = false;
+      Serial.println("onDisconnect");
+    }
+};
+
+bool connectToServer() {
+  Serial.print("Forming a connection to ");
+  Serial.println(myDevice->getAddress().toString().c_str());
+
+  BLEClient*  pClient  = BLEDevice::createClient();
+  Serial.println(" - Created client");
+
+  pClient->setClientCallbacks(new MyClientCallback());
+
+  // Connect to the remove BLE Server.
+  pClient->connect(myDevice);  // if you pass BLEAdvertisedDevice instead of address, it will be recognized type of peer device address (public or private)
+  Serial.println(" - Connected to server");
+
+  // Obtain a reference to the service we are after in the remote BLE server.
+  BLERemoteService* pRemoteService = pClient->getService(serviceUUID);
+  if (pRemoteService == nullptr) {
+    Serial.print("Failed to find our service UUID: ");
+    Serial.println(serviceUUID.toString().c_str());
+    pClient->disconnect();
+    return false;
+  }
+  Serial.println(" - Found our service");
+
+
+  // Obtain a reference to the characteristic in the service of the remote BLE server.
+  pRemoteCharacteristic = pRemoteService->getCharacteristic(charUUID);
+  if (pRemoteCharacteristic == nullptr) {
+    Serial.print("Failed to find our characteristic UUID: ");
+    Serial.println(charUUID.toString().c_str());
+    pClient->disconnect();
+    return false;
+  }
+  Serial.println(" - Found our characteristic");
+
+  // Read the value of the characteristic.
+  if (pRemoteCharacteristic->canRead()) {
+    std::string value = pRemoteCharacteristic->readValue();
+    Serial.print("The characteristic value was: ");
+    Serial.println(value.c_str());
+  }
+
+  if (pRemoteCharacteristic->canNotify())
+    pRemoteCharacteristic->registerForNotify(notifyCallback);
+
+  connected = true;
+  return true;
+}
+/**
+   Scan for BLE servers and find the first one that advertises the service we are looking for.
+*/
+class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
+    /**
+        Called for each advertising BLE server.
+    */
+    void onResult(BLEAdvertisedDevice advertisedDevice) {
+      Serial.print("BLE Advertised Device found: ");
+      Serial.println(advertisedDevice.toString().c_str());
+
+      // We have found a device, let us now see if it contains the service we are looking for.
+      if (advertisedDevice.haveServiceUUID() && advertisedDevice.isAdvertisingService(serviceUUID)) {
+
+        BLEDevice::getScan()->stop();
+        myDevice = new BLEAdvertisedDevice(advertisedDevice);
+        doConnect = true;
+        doScan = true;
+
+      } // Found our server
+    } // onResult
+}; // MyAdvertisedDeviceCallbacks
+
 
 void setup() {
-  Serial.begin(115200);
+
   M5.begin();
-  Wire.begin();
-  M5.Lcd.fillScreen(BLACK);
-  M5.Lcd.setTextColor(GREEN , BLACK);
-  M5.Lcd.setTextSize(2);
-  IMU.initMPU9250();
-  IMU.calibrateMPU9250(IMU.gyroBias, IMU.accelBias);
-  Serial.print("Initializing SD card...");
+  M5.Power.begin();
 
-  if (!SD.begin(4)) {
-    Serial.println("initialization failed!");
-    while (1);
-  }
-  Serial.println("initialization done.");
 
-}
+  Serial.begin(115200);
+  Serial.println("Starting Arduino BLE Client application...");
+  BLEDevice::init("");
 
+  // Retrieve a Scanner and set the callback we want to use to be informed when we
+  // have detected a new device.  Specify that we want active scanning and start the
+  // scan to run for 5 seconds.
+  BLEScan* pBLEScan = BLEDevice::getScan();
+  pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
+  pBLEScan->setInterval(1349);
+  pBLEScan->setWindow(449);
+  pBLEScan->setActiveScan(true);
+  pBLEScan->start(5, false);
+} // End of setup.
+
+
+// This is the Arduino main loop function.
 void loop() {
-  unsigned long currentMillis = millis();
   M5.update();
-  count++;
-  if (IMU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01) {
-    IMU.readAccelData(IMU.accelCount);
-    IMU.getAres();
-
-    IMU.ax = (float)IMU.accelCount[0] * IMU.aRes; // - accelBias[0];
-    IMU.ay = (float)IMU.accelCount[1] * IMU.aRes; // - accelBias[1];
-    IMU.az = (float)IMU.accelCount[2] * IMU.aRes; // - accelBias[2];
-
-    IMU.readGyroData(IMU.gyroCount);  // Read the x/y/z adc values
-    IMU.getGres();
-
-    IMU.gx = (float)IMU.gyroCount[0] * IMU.gRes;
-    IMU.gy = (float)IMU.gyroCount[1] * IMU.gRes;
-    IMU.gz = (float)IMU.gyroCount[2] * IMU.gRes;
-
-    IMU.readMagData(IMU.magCount);  // Read the x/y/z adc values
-    IMU.getMres();
-
-    IMU.mx = (float)IMU.magCount[0] * IMU.mRes * IMU.magCalibration[0] -
-             IMU.magbias[0];
-    IMU.my = (float)IMU.magCount[1] * IMU.mRes * IMU.magCalibration[1] -
-             IMU.magbias[1];
-    IMU.mz = (float)IMU.magCount[2] * IMU.mRes * IMU.magCalibration[2] -
-             IMU.magbias[2];
-
-
-   
-      if (count % 10) {
-
-        ImuAX = (float)(1000 * IMU.ax);
-        ImuAY = (float)(1000 * IMU.ay);
-        ImuAZ = (float)(1000 * IMU.az);
-        ImuGX = (float)(IMU.gx);
-        ImuGY = (float)(IMU.gy);
-        ImuGZ = (float)(IMU.gz);
-      }
-    }
-  }
-  if ((currentMillis - previousMillis) >= 700 && runState == 1) {
-    M5.Lcd.fillScreen(BLACK);
-    M5.Lcd.setTextColor(GREEN , BLACK);
-    M5.Lcd.setTextSize(2);
-    M5.Lcd.setCursor(5, 0); M5.Lcd.print("ACCELEROMETER AND GYRO");
-    M5.Lcd.setCursor(0, 32); M5.Lcd.print("x");
-    M5.Lcd.setCursor(x, 32); M5.Lcd.print("y");
-    M5.Lcd.setCursor(y, 32); M5.Lcd.print("z");
-
-   
-    if (ImuAX <= (setDefault_Ax + notiAx)*-1 || ImuAX >= (setDefault_Ax + notiAx)*1){
-      M5.Lcd.setTextColor(RED , BLACK);
-      M5.Lcd.setCursor(0, 48 * 2); M5.Lcd.print(ImuAX);
-      M5.Lcd.setTextColor(YELLOW , BLACK);
-    }else{
-      M5.Lcd.setTextColor(YELLOW , BLACK);
-      M5.Lcd.setCursor(0, 48 * 2); M5.Lcd.print(ImuAX);
-    }
-    M5.Lcd.setCursor(x, 48 * 2); M5.Lcd.print(ImuAY);
-    M5.Lcd.setCursor(y, 48 * 2); M5.Lcd.print(ImuAZ);
-    M5.Lcd.setCursor(z, 48 * 2); M5.Lcd.print("mg");
-
-    M5.Lcd.setCursor(0, 64 * 2); M5.Lcd.print(ImuGX);
-    M5.Lcd.setCursor(x, 64 * 2); M5.Lcd.print(ImuGY);
-    M5.Lcd.setCursor(y, 64 * 2); M5.Lcd.print(ImuGZ);
-    M5.Lcd.setCursor(z, 64 * 2); M5.Lcd.print("deg/s");
-    M5.Lcd.setTextColor(WHITE , BLACK);
-    M5.Lcd.setCursor(20, 220);
-    M5.Lcd.print(setDefault_Ax);
-    previousMillis = currentMillis;
-    Serial.println(setDefault_Ax);
-  }
-  if (M5.BtnB.wasReleased() && saveState == 0) {
-    saveState = 1;
-    previousMillis_Save = currentMillis;
-    Time = currentMillis;
-  }
-  if (runState == 1) {
-    M5.Lcd.setTextColor(WHITE , BLACK);
-    M5.Lcd.setCursor(20, 220);
-    M5.Lcd.print(Time);
-    if ((currentMillis - previousMillis) >= 5000 && (currentMillis - previousMillis) <= 5000 + 500) {
-      dataLog[0][0] = ImuAX;
-      dataLog[1][0] = ImuAY;
-      dataLog[2][0] = ImuAZ;
-      dataLog[3][0] = ImuGX;
-      dataLog[4][0] = ImuGY;
-      dataLog[5][0] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 5500 && (currentMillis - previousMillis) <= 5500 + 500) {
-      dataLog[0][1] = ImuAX;
-      dataLog[1][1] = ImuAY;
-      dataLog[2][1] = ImuAZ;
-      dataLog[3][1] = ImuGX;
-      dataLog[4][1] = ImuGY;
-      dataLog[5][1] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 6000 && (currentMillis - previousMillis) <= 6000 + 500) {
-      dataLog[0][2] = ImuAX;
-      dataLog[1][2] = ImuAY;
-      dataLog[2][2] = ImuAZ;
-      dataLog[3][2] = ImuGX;
-      dataLog[4][2] = ImuGY;
-      dataLog[5][2] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 6500 && (currentMillis - previousMillis) <= 6500 + 250) {
-      dataLog[0][3] = ImuAX;
-      dataLog[1][3] = ImuAY;
-      dataLog[2][3] = ImuAZ;
-      dataLog[3][3] = ImuGX;
-      dataLog[4][3] = ImuGY;
-      dataLog[5][3] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 7000 && (currentMillis - previousMillis) <= 7000 + 500) {
-      dataLog[0][4] = ImuAX;
-      dataLog[1][4] = ImuAY;
-      dataLog[2][4] = ImuAZ;
-      dataLog[3][4] = ImuGX;
-      dataLog[4][4] = ImuGY;
-      dataLog[5][4] = ImuGZ;   
-    }else if((currentMillis - previousMillis) >= 7500 && (currentMillis - previousMillis) <= 7500 + 500) {
-      dataLog[0][5] = ImuAX;
-      dataLog[1][5] = ImuAY;
-      dataLog[2][5] = ImuAZ;
-      dataLog[3][5] = ImuGX;
-      dataLog[4][5] = ImuGY;
-      dataLog[5][5] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 8000 && (currentMillis - previousMillis) <= 8000 + 500) {
-      dataLog[0][6] = ImuAX;
-      dataLog[1][6] = ImuAY;
-      dataLog[2][6] = ImuAZ;
-      dataLog[3][6] = ImuGX;
-      dataLog[4][6] = ImuGY;
-      dataLog[5][6] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 8500 && (currentMillis - previousMillis) <= 8500 + 500) {
-      dataLog[0][7] = ImuAX;
-      dataLog[1][7] = ImuAY;
-      dataLog[2][7] = ImuAZ;
-      dataLog[3][7] = ImuGX;
-      dataLog[4][7] = ImuGY;
-      dataLog[5][7] = ImuGZ;
-    }else if((currentMillis - previousMillis) >= 9000 && (currentMillis - previousMillis) <= 9000 + 500) {
-      dataLog[0][8] = ImuAX;
-      dataLog[1][8] = ImuAY;
-      dataLog[2][8] = ImuAZ;
-      dataLog[3][8] = ImuGX;
-      dataLog[4][8] = ImuGY;
-      dataLog[5][8] = ImuGZ;
-      }else if((currentMillis - previousMillis) >= 9500 && (currentMillis - previousMillis) <= 9500 + 500) {
-      dataLog[0][9] = ImuAX;
-      dataLog[1][9] = ImuAY;
-      dataLog[2][9] = ImuAZ;
-      dataLog[3][9] = ImuGX;
-      dataLog[4][9] = ImuGY;
-      dataLog[5][9] = ImuGZ;
-      runState = 2;
-    }
-    
-   Serial.print(dataLog[5][0]);
-   Serial.print(" - ");
-   Serial.print(dataLog[5][1]);
-   Serial.print(" - ");
-   Serial.print(dataLog[5][2]);
-   Serial.print(" - ");
-   Serial.print(dataLog[5][3]);
-   Serial.print(" - ");
-   Serial.println(dataLog[5][4]);
-  }
-  if(runState == 2){
-    myFile = SD.open("/data.txt", FILE_WRITE);
-  if (myFile) {
-      Serial.print("Writing...");
-      myFile.println("Accel  X" + dataLog[0][0]+ " " +  "Y" +dataLog[1][0] + " " + "Z" + dataLog[2][0]+ " " + "GYRO" + " " + "X" + dataLog[3][0] + " " + "Y" + dataLog[4][0]+ " " + "Z" + dataLog[5][0]);
-      myFile.println("Accel  X" + dataLog[0][1]+ " " +  "Y" +dataLog[1][1] + " " + "Z" + dataLog[2][1]+ " " + "GYRO" + " " + "X" + dataLog[3][1] + " " + "Y" + dataLog[4][1]+ " " + "Z" + dataLog[5][1]);
-      myFile.println("Accel  X" + dataLog[0][2]+ " " +  "Y" +dataLog[1][2] + " " + "Z" + dataLog[2][2]+ " " + "GYRO" + " " + "X" + dataLog[3][2] + " " + "Y" + dataLog[4][2]+ " " + "Z" + dataLog[5][2]);
-      myFile.println("Accel  X" + dataLog[0][3]+ " " +  "Y" +dataLog[1][3] + " " + "Z" + dataLog[2][3]+ " " + "GYRO" + " " + "X" + dataLog[3][3] + " " + "Y" + dataLog[4][3]+ " " + "Z" + dataLog[5][3]);
-      myFile.println("Accel  X" + dataLog[0][4]+ " " +  "Y" +dataLog[1][4] + " " + "Z" + dataLog[2][4]+ " " + "GYRO" + " " + "X" + dataLog[3][4] + " " + "Y" + dataLog[4][4]+ " " + "Z" + dataLog[5][4]);
-      myFile.println("Accel  X" + dataLog[0][5]+ " " +  "Y" +dataLog[1][5] + " " + "Z" + dataLog[2][5]+ " " + "GYRO" + " " + "X" + dataLog[3][5] + " " + "Y" + dataLog[4][5]+ " " + "Z" + dataLog[5][5]);
-      myFile.println("Accel  X" + dataLog[0][6]+ " " +  "Y" +dataLog[1][6] + " " + "Z" + dataLog[2][6]+ " " + "GYRO" + " " + "X" + dataLog[3][6] + " " + "Y" + dataLog[4][6]+ " " + "Z" + dataLog[5][6]);
-      myFile.println("Accel  X" + dataLog[0][7]+ " " +  "Y" +dataLog[1][7] + " " + "Z" + dataLog[2][7]+ " " + "GYRO" + " " + "X" + dataLog[3][7] + " " + "Y" + dataLog[4][7]+ " " + "Z" + dataLog[5][7]);
-      myFile.println("Accel  X" + dataLog[0][8]+ " " +  "Y" +dataLog[1][8] + " " + "Z" + dataLog[2][8]+ " " + "GYRO" + " " + "X" + dataLog[3][8] + " " + "Y" + dataLog[4][8]+ " " + "Z" + dataLog[5][8]);
-      myFile.println("Accel  X" + dataLog[0][9]+ " " +  "Y" +dataLog[1][9] + " " + "Z" + dataLog[2][9]+ " " + "GYRO" + " " + "X" + dataLog[3][9] + " " + "Y" + dataLog[4][9]+ " " + "Z" + dataLog[5][9]);
-      Serial.println("Done.");
+  // If the flag "doConnect" is true then we have scanned for and found the desired
+  // BLE Server with which we wish to connect.  Now we connect to it.  Once we are
+  // connected we set the connected flag to be true.
+  if (doConnect == true) {
+    if (connectToServer()) {
+      Serial.println("We are now connected to the BLE Server.");
     } else {
-      Serial.println("error opening");
-    } 
+      Serial.println("We have failed to connect to the server; there is nothin more we will do.");
+    }
+    doConnect = false;
   }
-}
+
+  // If we are connected to a peer BLE Server, update the characteristic each time we are reached
+  // with the current time since boot.
+  if (connected) {
+    String newValue;
+    if (M5.BtnA.wasReleased()) {
+      newValue = "Crasher down";
+    } else if (M5.BtnB.wasReleased()) {
+      newValue = "Move";
+    } else if (M5.BtnC.wasReleased()) {
+      newValue = "Lift";
+    } else {
+      newValue = "Default";
+    }
+    pRemoteCharacteristic->writeValue(newValue.c_str(), newValue.length());
+    Serial.println("Send data : \"" + newValue + "\"");
+
+  } else if (doScan) {
+    BLEDevice::getScan()->start(0);  // this is just eample to start scan after disconnect, most likely there is better way to do it in arduino
+  }
+
+  delay(1000); // Delay a second between loops.
+} // End of loop
