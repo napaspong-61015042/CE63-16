@@ -159,7 +159,6 @@ class _HomeState extends State<Home> {
   }
 
   readStatus() {
-
     DatabaseReference readDeviceId = new FirebaseDatabase().reference().child('users/${uidValue}/device_id');
     readDeviceId.once().then((DataSnapshot snapshot) {
        device_id = snapshot.value;

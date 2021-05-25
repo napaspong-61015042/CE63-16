@@ -16,6 +16,9 @@ class HistoryPage extends StatefulWidget {
 
 class _HistoryPageState extends State<HistoryPage> {
   //String uidValue = '';
+  String uidValue;
+  String device_id = '';
+  String getStatusText = '';
 
   List<dynamic> listHistory = [];
   final FirebaseAuth firebaseAuth = FirebaseAuth
@@ -26,6 +29,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
     super.initState();
     historyStatus();
+
   }
 
   String readTimestamp(int timestamp) {
@@ -60,6 +64,20 @@ class _HistoryPageState extends State<HistoryPage> {
     }
     return textStatus;
   }
+
+  String checkStatus(String status) {
+    String checkStatus = '';
+    if (status == "24:0A:C4:AA:14:94") {
+      checkStatus = 'form Base station 1';
+    } else if (status == "24:0A:C4:AA:CD:E8") {
+      checkStatus = 'form Base station 2';
+    } else {
+      checkStatus = ' is disconnected from Base station';
+    }
+    return checkStatus;
+  }
+
+  
 
   Future<void> historyStatus() async {
     String device = '';
@@ -120,7 +138,7 @@ class _HistoryPageState extends State<HistoryPage> {
                       ),
                       subtitle: new Center(
                         child: Text(
-                          '${textStatus(listHistory[index]['device_status'])}',
+                          '${textStatus(listHistory[index]['device_status'])},${checkStatus(listHistory[index]['device_connect'])}',
                           style: new TextStyle(fontSize: 18.0,color: ColorPalette.black),
                         ),
                       ),
