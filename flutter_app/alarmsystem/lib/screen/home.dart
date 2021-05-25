@@ -32,13 +32,15 @@ class _HomeState extends State<Home> {
   final databaseReference = FirebaseDatabase.instance.reference();
   dynamic result = '';
   bool _network = false;
-  String uidValue = '';
+  String uidValue;
   String device_id = '';
   String getStatusText = '';
   FirebaseMessaging firebaseMessaging = new FirebaseMessaging();
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       new FlutterLocalNotificationsPlugin();
   bool alertStatus = false;
+
+
 
   // Method
 
@@ -72,8 +74,11 @@ class _HomeState extends State<Home> {
         .listen((IosNotificationSettings setting) {
       print('IOS Setting Registed');
     });
-
+    firebaseMessaging.getToken().then((token) {
+      update(token,uidValue);
+    });
   }
+
   Future<void> uidStatus() async {
       FirebaseAuth firebaseAuth = FirebaseAuth.instance;
       User user = await firebaseAuth.currentUser;
@@ -132,7 +137,7 @@ class _HomeState extends State<Home> {
         0, msg['notification']['title'], msg['notification']['body'], platform);
   }
 
-  update(String token,String uid) {
+  update(String token,String uid,) {
     print(token);
     DatabaseReference updateToken = new FirebaseDatabase().reference();
     updateToken.child('users/${uid}/fcm_token/').set({"token": token});

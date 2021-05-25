@@ -54,9 +54,9 @@ class _HistoryPageState extends State<HistoryPage> {
     if (status == 1) {
       textStatus = 'The motorcycle default';
     } else if (status == 2) {
-      textStatus = 'The motorcycle has lift';
-    } else if (status == 3) {
       textStatus = 'The motorcycle has crashed down';
+    } else if (status == 3) {
+      textStatus = 'The motorcycle has lift';
     }
     return textStatus;
   }
